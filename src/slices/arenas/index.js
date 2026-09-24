@@ -80,6 +80,7 @@ export function createArenas(state, bus) {
       jumpPads: info.jumpPads || [],
       emitters: ctx.emitters,
       bounds: info.bounds,
+      playHalf: entry.def.half, // inner square the player can actually reach
       env: info.env,
       music: info.music,
       shadowLights: info.shadowLights,

@@ -103,7 +103,16 @@ export function createEnemies(state, bus) {
         pos.y = 0;
       }
     }
-    if (cfg.fly) pos.y = cfg.hover ?? rand(5, 8);
+    if (cfg.fly) {
+      // flyers can't come in through the gates (the sky barrier spans the wall
+      // line), so they arrive over the arena, just inside the wall
+      const h = (state.world.playHalf || 42) - 6;
+      if (!opts.at) {
+        pos.x = Math.max(-h, Math.min(h, pos.x));
+        pos.z = Math.max(-h, Math.min(h, pos.z));
+      }
+      pos.y = cfg.hover ?? rand(5, 8);
+    }
     // fragile types keep their base HP (the difficulty table still applies)
     const hpMult = cfg.scales || cfg.boss ? (opts.hpMult ?? 1) : (opts.baseHpMult ?? 1);
     const hp = Math.max(10, Math.round(cfg.hp * hpMult));
@@ -872,6 +881,13 @@ export function createEnemies(state, bus) {
     return firing;
   }
 
+  // flyers must stay over the playable square
+  function keepInside(e) {
+    const h = (state.world.playHalf || 42) - 1.5;
+    e.pos.x = Math.max(-h, Math.min(h, e.pos.x));
+    e.pos.z = Math.max(-h, Math.min(h, e.pos.z));
+  }
+
   // wasps: orbit high, then dive-bomb
   function updateWasp(e, dt, dist, stunned) {
     const pl = state.player;
@@ -905,12 +921,10 @@ export function createEnemies(state, bus) {
       }
     }
     pos.addScaledVector(e.vel, dt);
-    // don't fly through walls
+    // don't fly through walls, or out of the arena
     const col = state.world.collision;
     if (!e.diving) col.collideXZ(pos, e.radius, pos.y - 0.3, pos.y + 0.3, 0);
-    const b = state.world.bounds;
-    pos.x = Math.max(b.minX, Math.min(b.maxX, pos.x));
-    pos.z = Math.max(b.minZ, Math.min(b.maxZ, pos.z));
+    keepInside(e);
     if (e.diving && !col.segmentClear(pos.x, pos.y, pos.z, pos.x + e.vel.x * dt * 2, pos.y + e.vel.y * dt * 2, pos.z + e.vel.z * dt * 2)) {
       kill(e, { part: 'body', source: 'self' });
       return;
@@ -933,21 +947,41 @@ export function createEnemies(state, bus) {
       const f = o.hp / o.maxHp;
       if (f < worst) { worst = f; target = o; }
     }
-    // position: near the target (or the pack), away from the player
-    let gx = pos.x, gz = pos.z;
-    if (target) { gx = target.pos.x; gz = target.pos.z; }
+    // position: tuck in behind the ally it's repairing; with nobody left to
+    // repair, orbit the player at ~12m and zap them (never flee forever)
     const ax = pos.x - pl.pos.x, az = pos.z - pl.pos.z;
     const al = Math.hypot(ax, az) || 1;
-    gx += (ax / al) * 5;
-    gz += (az / al) * 5;
-    const gy = (target ? target.pos.y : 0) + 3.5;
+    let gx, gz, gy;
+    if (target) {
+      gx = target.pos.x + (ax / al) * 4;
+      gz = target.pos.z + (az / al) * 4;
+      gy = target.pos.y + 3.5;
+    } else {
+      e.orbit = (e.orbit ?? Math.atan2(az, ax)) + dt * 0.5 * e.strafeDir;
+      gx = pl.pos.x + Math.cos(e.orbit) * 12;
+      gz = pl.pos.z + Math.sin(e.orbit) * 12;
+      gy = pl.pos.y - pl.eye + 3.5;
+      e.zapT = (e.zapT ?? 1.5) - dt;
+      if (e.zapT <= 0 && !stunned && e.hasLOS) {
+        e.zapT = 1.6 / e.rate;
+        const chest = { x: pl.pos.x, y: pl.pos.y - 0.4, z: pl.pos.z };
+        bus.emit('fx:arc', { from: e.center, to: chest, color: 0x3dff8a });
+        bus.emit('damage:player', { amount: 5 * e.dmgMult, kind: 'shot', from: e.center, source: e });
+        bus.emit('sfx', { id: 'mender_beam', pos, vol: 0.5 });
+      }
+    }
+    // fly over whatever is ahead (buildings, towers) instead of pinning on it
+    const col = state.world.collision;
+    const lx = pos.x + Math.max(-3, Math.min(3, (gx - pos.x) * 0.3)), lz = pos.z + Math.max(-3, Math.min(3, (gz - pos.z) * 0.3));
+    const roof = Math.max(col.groundHeight(lx, lz, 1.2, 40, 40), col.groundHeight(pos.x, pos.z, 1.2, 40, 40));
+    gy = Math.max(gy, roof + 2.2);
     _v.set(gx - pos.x, gy - pos.y, gz - pos.z);
     const d = _v.length();
-    if (dist < 12) _v.set(ax / al, 0.2, az / al).multiplyScalar(4);
-    _v.divideScalar(Math.max(1, d)).multiplyScalar(stunned ? 0 : e.cfg.speed * e.speedMult);
+    _v.divideScalar(Math.max(1, d)).multiplyScalar(stunned ? 0 : Math.min(e.cfg.speed * e.speedMult, d * 1.5));
     e.vel.lerp(_v, Math.min(1, dt * 2));
     pos.addScaledVector(e.vel, dt);
-    state.world.collision.collideXZ(pos, e.radius, pos.y - 0.3, pos.y + 0.3, 0);
+    col.collideXZ(pos, e.radius, pos.y - 0.3, pos.y + 0.3, 0);
+    keepInside(e);
     if (target && !stunned && target.pos.distanceTo(pos) < heal.range) {
       target.hp = Math.min(target.maxHp, target.hp + target.maxHp * heal.rate * dt);
       e.beamT = (e.beamT || 0) - dt;
@@ -988,6 +1022,24 @@ export function createEnemies(state, bus) {
     }
   });
   bus.on('enemies:clear', clear);
+  // failsafe from the director: warp any stragglers to 12–22m from the player
+  bus.on('enemies:recall', () => {
+    const pl = state.player.pos;
+    for (const e of E.list) {
+      if (!e.alive) continue;
+      const n = state.nav?.randomNear(pl.x, pl.z, 12, 22);
+      if (n == null || n < 0) continue;
+      bus.emit('fx:beam', { pos: { x: e.pos.x, y: e.pos.y, z: e.pos.z }, color: e.cfg.model.glow, height: 6 });
+      state.nav.nodePos(n, _t);
+      e.pos.set(_t.x, _t.y + (e.cfg.fly ? 4 : 0), _t.z);
+      e.vel.set(0, 0, 0);
+      e.vy = 0;
+      e.padFly = false;
+      e.diving = false;
+      bus.emit('fx:beam', { pos: { x: _t.x, y: _t.y, z: _t.z }, color: e.cfg.model.glow, height: 6 });
+    }
+    bus.emit('sfx', { id: 'teleport', vol: 0.8 });
+  });
   bus.on('run:start', clear);
   bus.on('arena:ready', clear);
 

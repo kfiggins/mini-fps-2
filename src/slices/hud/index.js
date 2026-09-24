@@ -50,6 +50,7 @@ export function createHud(state, bus) {
     <div id="h-scope"><div class="scope-ring"></div><div class="scope-h"></div><div class="scope-v"></div><div class="scope-dot"></div></div>
     <div id="h-cockpit"><div class="ck-frame"></div><div id="h-mech-hp"><span>MECH INTEGRITY</span><div id="h-mech-bar"><div id="h-mech-fill"></div></div></div></div>
     <div id="h-rail"><div id="h-rail-fill"></div></div>
+    <div id="h-marks"></div>
     <div id="h-hints" class="hidden">
       <span><kbd>WASD</kbd> move</span><span><kbd>SHIFT</kbd> sprint</span><span><kbd>SPACE</kbd> jump</span>
       <span><kbd>RMB</kbd> aim</span><span><kbd>R</kbd> reload</span><span><kbd>1</kbd><kbd>2</kbd> swap</span><span><kbd>G</kbd> grenade</span>
@@ -186,6 +187,45 @@ export function createHud(state, bus) {
     dirs.length = 0;
     cache.clear();
   });
+
+  // markers for the last few robots (on-screen pips, edge arrows off-screen)
+  const marks = [];
+  const markRoot = () => $('h-marks');
+  function updateMarks() {
+    const R = state.run;
+    const show = R.waveState === 'active' && !R.remaining && state.enemies.alive > 0 && state.enemies.alive <= 3 && state.mode === 'playing';
+    const targets = show ? state.enemies.list.filter((e) => e.alive && !e.untargetable) : [];
+    while (marks.length < targets.length) {
+      const el = document.createElement('div');
+      el.className = 'mark';
+      markRoot().appendChild(el);
+      marks.push(el);
+    }
+    const w = window.innerWidth, h = window.innerHeight;
+    const cam = state.camera;
+    marks.forEach((el, i) => {
+      const e = targets[i];
+      if (!e) { el.style.display = 'none'; return; }
+      el.style.display = 'block';
+      _v.set(e.center.x, e.center.y + e.height * 0.6, e.center.z).project(cam);
+      let x = (_v.x * 0.5 + 0.5) * w, y = (-_v.y * 0.5 + 0.5) * h;
+      const behind = _v.z > 1;
+      const off = behind || x < 40 || x > w - 40 || y < 40 || y > h - 40;
+      if (off) {
+        // point along the direction to the robot, pinned to the screen edge
+        let dx = x - w / 2, dy = y - h / 2;
+        if (behind) { dx = -dx; dy = -dy; }
+        const k = Math.min((w / 2 - 50) / Math.abs(dx || 1e-3), (h / 2 - 50) / Math.abs(dy || 1e-3));
+        x = w / 2 + dx * k;
+        y = h / 2 + dy * k;
+        el.style.transform = `translate(${x}px, ${y}px) translate(-50%,-50%) rotate(${Math.atan2(dy, dx) + Math.PI / 2}rad)`;
+        el.classList.add('edge');
+      } else {
+        el.style.transform = `translate(${x}px, ${y}px) translate(-50%,-100%)`;
+        el.classList.remove('edge');
+      }
+    });
+  }
 
   // ---------- per frame ----------
   return {
@@ -326,6 +366,7 @@ export function createHud(state, bus) {
       if (p.inMech) set('mechhp', E['h-mech-fill'], 'width', `${Math.max(0, mech.hp / mech.maxHp) * 100}%`);
       if (hintT > 0 && state.mode === 'playing') hintT -= dt;
       toggle($('h-hints'), 'hidden', !(hintT > 0));
+      updateMarks();
       hitT = Math.max(0, hitT - dt);
       if (hitT === 0) E['h-hit'].classList.remove('on');
 

@@ -26,6 +26,7 @@ export function createWaves(state, bus) {
   let transitionT = 0;
   let transitionStep = 0;
   let clearT = 0;
+  let stallT = 0; // game time with robots left but no hits or kills
 
   const diff = () => R.difficulty;
   state.operators = OPERATORS;
@@ -266,9 +267,10 @@ export function createWaves(state, bus) {
     R.stats.scrapEarned += v;
   });
   bus.on('scrap:spend', ({ amount }) => { R.scrap = Math.max(0, R.scrap - amount); });
-  bus.on('enemy:hit', ({ amount }) => { R.stats.damageDealt += amount; });
+  bus.on('enemy:hit', ({ amount }) => { R.stats.damageDealt += amount; stallT = 0; });
 
   bus.on('enemy:killed', (k) => {
+    stallT = 0;
     if (state.mode !== 'playing' && state.mode !== 'offer') return;
     R.kills++;
     R.stats.kills++;
@@ -363,7 +365,17 @@ export function createWaves(state, bus) {
           spawnT = queue.length > 12 ? 0.35 : 0.55;
         }
         if (spawnT < 0) spawnT = 0;
+        R.remaining = queue.length;
         if (spawnedAll && queue.length === 0 && state.enemies.alive === 0) waveCleared();
+        // failsafe: if the last robots are stuck/hiding, bring them to you
+        if (queue.length === 0 && state.enemies.alive > 0 && state.enemies.alive <= 4) {
+          stallT += dt;
+          if (stallT > 25) {
+            stallT = 0;
+            bus.emit('enemies:recall');
+            bus.emit('hud:warn', { text: 'STRAGGLERS INBOUND' });
+          }
+        } else stallT = 0;
       } else if (R.waveState === 'cleared' && clearT > 0) {
         clearT -= dt;
         if (clearT <= 0 && state.player.alive) openOffer();
