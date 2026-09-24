@@ -23,7 +23,8 @@ const spots = [
   ['reactor', 'control 2F', -32, 3.6, -30],
   ['reactor', 'hangar pad', -32, 2, 24],
 ];
-for (const [arena, name, x, y, z] of spots) {
+const only = process.argv[2];
+for (const [arena, name, x, y, z] of spots.filter((sp) => !only || sp[1].includes(only))) {
   const r = await page.evaluate(async (arena, x, y, z) => {
     const g = window.__game;
     if (g.state.world.id !== arena) { g.bus.emit('arena:load', { id: arena }); }

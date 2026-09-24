@@ -367,7 +367,9 @@ export function createPlayer(state, bus) {
       if (p.onGround && padCd <= 0) {
         for (const pad of state.world.jumpPads) {
           if (Math.hypot(p.pos.x - pad.x, p.pos.z - pad.z) < pad.r && Math.abs(feet - (pad.y ?? 0)) < 0.4) {
-            p.vel.set(pad.vx, pad.vy, pad.vz);
+            // aim from where you actually stand, so off-centre launches still land
+            if (pad.T) p.vel.set((pad.toX - p.pos.x) / pad.T, pad.vy, (pad.toZ - p.pos.z) / pad.T);
+            else p.vel.set(pad.vx, pad.vy, pad.vz);
             p.onGround = false;
             padCd = 0.6;
             bus.emit('sfx', { id: 'jump_pad' });

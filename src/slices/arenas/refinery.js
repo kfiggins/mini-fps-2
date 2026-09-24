@@ -24,8 +24,9 @@ function pad(x, z, tx, ty, tz, y = 0) {
   const dist = Math.hypot(dx, dz);
   const Tf = Math.min(1.6, Math.max(1.05, dist / 10));
   ty += 1.1; // arrive a little above the ledge and drop onto it
+  const arriveY = ty;
   return {
-    x, y, z, r: 1.1, toX: tx, toY: ty, toZ: tz,
+    x, y, z, r: 1.1, toX: tx, toY: ty, toZ: tz, T: Tf, arriveY,
     vx: dx / Tf, vy: (ty - y + 0.5 * G * Tf * Tf) / Tf, vz: dz / Tf,
     color: 0x44ddff,
   };

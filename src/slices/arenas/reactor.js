@@ -22,7 +22,7 @@ function pad(x, z, tx, ty, tz, y = 0) {
   const Tf = Math.min(1.6, Math.max(1.05, dist / 10));
   ty += 1.1;
   return {
-    x, y, z, r: 1.1, toX: tx, toY: ty - 1.1, toZ: tz,
+    x, y, z, r: 1.1, toX: tx, toY: ty - 1.1, toZ: tz, T: Tf, arriveY: ty,
     vx: dx / Tf, vy: (ty - y + 0.5 * G * Tf * Tf) / Tf, vz: dz / Tf, color: 0xff2bd6,
   };
 }

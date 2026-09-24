@@ -561,7 +561,8 @@ export function createEnemies(state, bus) {
       if (e.vy === 0 && e.padCd <= 0) {
         for (const pad of state.world.jumpPads) {
           if (Math.hypot(pos.x - pad.x, pos.z - pad.z) < pad.r && Math.abs(pos.y - (pad.y ?? 0)) < 0.4) {
-            e.vel.set(pad.vx, 0, pad.vz);
+            if (pad.T) e.vel.set((pad.toX - pos.x) / pad.T, 0, (pad.toZ - pos.z) / pad.T);
+            else e.vel.set(pad.vx, 0, pad.vz);
             e.vy = pad.vy;
             e.padFly = true;
             e.padCd = 1;
