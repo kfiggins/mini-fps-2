@@ -185,7 +185,7 @@ export function createEnemies(state, bus) {
     e.flinchV += Math.min(4, 0.6 + amount / Math.max(40, e.maxHp * 0.15)) * (e.boss ? 0.3 : 1);
     if (p.stagger && !e.boss) e.stun = Math.max(e.stun, 0.22);
     bus.emit('enemy:hit', { enemy: e, amount, part: p.part, point: p.point, source: p.source });
-    bus.emit('fx:dmgnum', { pos: p.point || e.center, amount, crit: p.part === 'head' || p.part === 'weak' });
+    bus.emit('fx:dmgnum', { pos: p.point || e.center, amount, crit: p.part === 'head' || p.part === 'weak', id: e.id });
     if (p.part === 'head' || p.part === 'weak') bus.emit('fx:burst', { pos: p.point || e.center, color: e.cfg.model.glow, count: 8, speed: 4, life: 0.3 });
     // boss phase 2
     if (e.boss && e.phase === 1 && e.hp < e.maxHp * 0.5 && e.cfg.phase2) enterPhase2(e);

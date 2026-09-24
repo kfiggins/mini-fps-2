@@ -148,21 +148,26 @@ export function createHud(state, bus) {
   // damage numbers
   const nums = [];
   const _v = new THREE.Vector3();
-  bus.on('fx:dmgnum', ({ pos, amount, crit }) => {
+  bus.on('fx:dmgnum', ({ pos, amount, crit, id }) => {
     if (!state.settings.damageNumbers || amount < 1) return;
-    // merge rapid hits on the same spot into one growing number
-    const last = nums[nums.length - 1];
-    if (last && last.t > 0.55 && Math.hypot(last.x - pos.x, last.y - pos.y, last.z - pos.z) < 1.2 && last.crit === crit) {
-      last.amount += Math.round(amount);
-      last.el.textContent = last.amount;
-      last.t = 0.8;
-      return;
+    // merge rapid hits on the same robot into one growing number
+    for (let i = nums.length - 1; i >= 0; i--) {
+      const n = nums[i];
+      if (n.id === id && n.t > 0.45) {
+        n.amount += Math.round(amount);
+        n.el.textContent = n.amount;
+        n.crit = n.crit || crit;
+        n.el.classList.toggle('crit', n.crit);
+        n.t = 0.8;
+        n.x = pos.x; n.y = pos.y; n.z = pos.z;
+        return;
+      }
     }
     const el = document.createElement('div');
     el.className = `dnum${crit ? ' crit' : ''}`;
     el.textContent = Math.round(amount);
     E['h-dmgnums'].appendChild(el);
-    nums.push({ el, x: pos.x, y: pos.y, z: pos.z, t: 0.8, amount: Math.round(amount), crit, dx: (Math.random() - 0.5) * 30 });
+    nums.push({ el, id, x: pos.x, y: pos.y, z: pos.z, t: 0.8, amount: Math.round(amount), crit, dx: (Math.random() - 0.5) * 30 });
     if (nums.length > 40) nums.shift().el.remove();
   });
 
