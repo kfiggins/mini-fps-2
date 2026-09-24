@@ -81,11 +81,18 @@ export function createUpgrades(state, bus) {
     bus.emit('build:changed', { owned, synergies });
   }
 
-  function resetRun() {
+  function resetRun({ operator } = {}) {
     state.stats = createStats();
     owned.clear();
     synergies.clear();
     adrenT = surgeT = 0;
+    if (operator) {
+      state.stats.maxHealthBonus += operator.hpBonus || 0;
+      for (const id of operator.cards || []) {
+        const c = UPGRADES.find((u) => u.id === id);
+        if (c) { c.apply(state.stats); owned.set(id, 1); }
+      }
+    }
     publishBuild();
   }
 

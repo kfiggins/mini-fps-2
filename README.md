@@ -28,6 +28,13 @@ npm run build
 - **Act 3 — Reactor Core.** A neon facility at night, with a ring catwalk around
   a live reactor. **The Pulse:** the reactor charges and then sweeps the floor
   with a shockwave. Get up high or jump it, and try to catch robots in it.
+- **Operators:** starting kits unlocked by progress:
+  - Vanguard: rifle + marksman
+  - Breacher: scattergun + rifle, armor (reach Act 2)
+  - Ghost: Arc SMG + marksman, Rocket Boots (reach Act 3)
+  - Engineer: rifle + launcher, a drone, scrap (win a run)
+- **Endless:** after a victory, keep going. The arenas repeat in rotation and
+  every rotation adds more robots.
 - **Difficulties:**
   - **Easy** is for kids and new recruits: more HP, weaker robots, fewer
     spawns and more scrap.

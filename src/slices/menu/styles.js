@@ -28,6 +28,16 @@ export function injectMenuStyles() {
   .t-diff.sel { border-color: #ffd36b; box-shadow: 0 0 24px rgba(255,211,107,.25), inset 0 0 20px rgba(255,211,107,.08); }
   .t-diff.sel b { color: #ffd36b; }
   .t-diff.locked { opacity: .5; cursor: not-allowed; }
+  .t-ops { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .t-op { width: 172px; padding: 8px 10px; display: grid; grid-template-columns: 30px 1fr; column-gap: 8px; text-align: left; cursor: pointer;
+    color: #cfd6e2; background: rgba(12,15,22,.75); border: 1px solid #2c3444; border-radius: 9px; font-family: var(--font-body); transition: all .15s; }
+  .t-op .op-icon { grid-row: span 2; font-size: 22px; align-self: center; }
+  .t-op b { font: 700 12px var(--font-head); letter-spacing: .18em; color: #fff; }
+  .t-op span:last-child { font-size: 12px; line-height: 1.2; color: #8a94a6; }
+  .t-op:hover { border-color: #c084fc88; }
+  .t-op.sel { border-color: #c084fc; box-shadow: 0 0 18px rgba(192,132,252,.25); }
+  .t-op.sel b { color: #d9b8ff; }
+  .t-op.locked { opacity: .45; cursor: not-allowed; }
   .t-best { font: 600 13px var(--font-head); letter-spacing: .18em; color: #8a94a6; }
   .t-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
   .t-btn { font: 700 13px var(--font-head); letter-spacing: .2em; padding: 11px 20px; cursor: pointer; color: #cfd6e2; background: rgba(14,18,26,.85); border: 1px solid #333c4d; border-radius: 8px; transition: all .15s; }

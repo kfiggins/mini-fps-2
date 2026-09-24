@@ -87,3 +87,24 @@ export const MUTATORS = {
 };
 
 export const ELITE_AFFIX_IDS = ['shielded', 'volatile', 'swift', 'regen', 'splitting'];
+
+// Operators: starting kits. Unlocked by progress (tracked by the menu).
+//   cards: upgrade ids applied at run start · drone: start with a drone
+export const OPERATORS = {
+  vanguard: {
+    id: 'vanguard', name: 'VANGUARD', icon: '🎖️', desc: 'Rifle + Marksman. The classic kit.',
+    slots: ['rifle', 'marksman'], cards: [], unlock: null,
+  },
+  breacher: {
+    id: 'breacher', name: 'BREACHER', icon: '🛡️', desc: 'Scattergun + Rifle · +25 max HP · starts with 2 armor bars.',
+    slots: ['scattergun', 'rifle'], cards: [], hpBonus: 25, armor: 2, unlock: { act: 2, text: 'Reach Act 2' },
+  },
+  ghost: {
+    id: 'ghost', name: 'GHOST', icon: '👻', desc: 'Arc SMG + Marksman · Rocket Boots · −15 max HP.',
+    slots: ['arcsmg', 'marksman'], cards: ['boots'], hpBonus: -15, unlock: { act: 3, text: 'Reach Act 3' },
+  },
+  engineer: {
+    id: 'engineer', name: 'ENGINEER', icon: '🔧', desc: 'Rifle + Launcher · a combat drone · 150 scrap.',
+    slots: ['rifle', 'launcher'], cards: [], drone: true, scrap: 150, unlock: { win: true, text: 'Win a run' },
+  },
+};

@@ -113,10 +113,10 @@ if (DEV) {
     state, bus,
     slices: { render, input, audio, arenas, nav, abilities, upgrades, player, weapons, enemies, fx, pickups, drones, mech, shop, bounties, waves, hud, menu },
     debug: {
-      start(difficulty = 'normal') {
+      start(difficulty = 'normal', operator = 'vanguard') {
         state.autopilot = true;
         state.settings.difficulty = difficulty;
-        bus.emit('run:begin', { difficulty });
+        bus.emit('run:begin', { difficulty, operator });
         document.getElementById('menu').classList.add('hidden');
       },
       skipTo: (n) => waves.debug.skipTo(n),

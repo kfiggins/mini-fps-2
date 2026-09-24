@@ -19,6 +19,7 @@ export function createState() {
       volume: { master: 0.8, sfx: 0.9, music: 0.55 },
       damageNumbers: true,
       difficulty: 'normal', // easy | normal | overdrive
+      operator: 'vanguard', // starting kit (waves/defs OPERATORS)
     },
 
     // ---- render ----

@@ -55,8 +55,8 @@ export function createWeapons(state, bus) {
     return Math.max(1, Math.round(w.mag * (s.magMult || 1)) + (s.magFlat || 0));
   }
 
-  function resetRun() {
-    W.slots = [...STARTING_SLOTS];
+  function resetRun({ operator } = {}) {
+    W.slots = [...(operator?.slots || STARTING_SLOTS)];
     W.current = W.slots[0];
     W.ammo = {};
     for (const id of Object.keys(WEAPONS)) W.ammo[id] = WEAPONS[id].mag;

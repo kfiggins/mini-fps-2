@@ -11,6 +11,7 @@ import { injectMenuStyles } from './styles.js';
 const SETTINGS_KEY = 'mfps2-settings';
 const BEST_KEY = 'mfps2-best';
 const UNLOCK_KEY = 'mfps2-unlocks';
+const PROGRESS_KEY = 'mfps2-progress';
 
 function load(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
@@ -24,6 +25,9 @@ export function createMenu(state, bus, { lock, unlock }) {
   Object.assign(state.settings, load(SETTINGS_KEY, {}));
   const unlocks = load(UNLOCK_KEY, { overdrive: false });
   const best = load(BEST_KEY, {});
+  const progress = load(PROGRESS_KEY, { maxAct: 1, won: false });
+  const opUnlocked = (op) => !op.unlock || (op.unlock.act && progress.maxAct >= op.unlock.act) || (op.unlock.win && progress.won);
+  const operatorList = () => Object.values(state.operators || {});
   const el = document.getElementById('menu');
   const inter = document.getElementById('intermission');
   const fade = document.getElementById('fade');
@@ -49,6 +53,12 @@ export function createMenu(state, bus, { lock, unlock }) {
         <div class="t-diffs">${diffs().map((x) => `
           <button class="t-diff${x.id === d ? ' sel' : ''}${x.locked ? ' locked' : ''}" data-diff="${x.id}">
             <b>${x.label}</b><span>${x.desc}</span></button>`).join('')}</div>
+        <div class="t-ops">${operatorList().map((o) => {
+          const open = opUnlocked(o);
+          const sel = (state.settings.operator || 'vanguard') === o.id;
+          return `<button class="t-op${sel ? ' sel' : ''}${open ? '' : ' locked'}" data-op="${o.id}">
+            <span class="op-icon">${open ? o.icon : '🔒'}</span><b>${o.name}</b><span>${open ? o.desc : o.unlock.text}</span></button>`;
+        }).join('')}</div>
         <div class="t-best">${b ? `BEST · ${b.score.toLocaleString()} pts · wave ${b.wave}${b.won ? ' · 🏆 CLEARED' : ''}` : 'NO RECORD YET ON THIS DIFFICULTY'}</div>
         <div class="t-row">
           <button class="t-btn" data-act="how">HOW TO PLAY</button>
@@ -219,7 +229,8 @@ export function createMenu(state, bus, { lock, unlock }) {
     bus.emit('sfx', { id: 'ui_click' });
     screen = 'none';
     render();
-    bus.emit('run:begin', { difficulty: state.settings.difficulty });
+    const op = state.operators?.[state.settings.operator];
+    bus.emit('run:begin', { difficulty: state.settings.difficulty, operator: op && opUnlocked(op) ? op.id : 'vanguard' });
     lock();
   }
 
@@ -237,6 +248,14 @@ export function createMenu(state, bus, { lock, unlock }) {
     if (t.dataset.diff) {
       if (t.classList.contains('locked')) { bus.emit('sfx', { id: 'deny' }); return; }
       state.settings.difficulty = t.dataset.diff;
+      save(SETTINGS_KEY, state.settings);
+      bus.emit('sfx', { id: 'ui_click' });
+      render();
+      return;
+    }
+    if (t.dataset.op) {
+      if (t.classList.contains('locked')) { bus.emit('sfx', { id: 'deny' }); return; }
+      state.settings.operator = t.dataset.op;
       save(SETTINGS_KEY, state.settings);
       bus.emit('sfx', { id: 'ui_click' });
       render();
@@ -311,6 +330,10 @@ export function createMenu(state, bus, { lock, unlock }) {
     else if (won) prev.won = true;
     save(BEST_KEY, best);
     unlocks._justOverdrive = false;
+    if (won && !progress.won) {
+      progress.won = true;
+      save(PROGRESS_KEY, progress);
+    }
     if (won && difficulty === 'normal' && !unlocks.overdrive) {
       unlocks.overdrive = true;
       unlocks._justOverdrive = true;
@@ -327,7 +350,13 @@ export function createMenu(state, bus, { lock, unlock }) {
     fade.innerHTML = `<div class="act-card"><div class="act-n">ACT ${act}</div><div class="act-name">${name}</div><div class="act-tag">${tagline}</div></div>`;
     fade.classList.add('on');
   });
-  bus.on('act:start', () => {
+  bus.on('act:start', ({ act }) => {
+    if (act > progress.maxAct) {
+      progress.maxAct = act;
+      save(PROGRESS_KEY, progress);
+      const newly = operatorList().filter((o) => o.unlock?.act === act);
+      for (const o of newly) bus.emit('hud:feed', { text: `🔓 OPERATOR UNLOCKED: ${o.name}`, color: '#c084fc' });
+    }
     fade.classList.remove('on');
   });
 

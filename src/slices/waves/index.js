@@ -1,4 +1,4 @@
-import { ACTS, DIFFICULTIES, MUTATORS, ELITE_AFFIX_IDS } from './defs.js';
+import { ACTS, DIFFICULTIES, MUTATORS, ELITE_AFFIX_IDS, OPERATORS } from './defs.js';
 import { WAVES_PER_ACT, FINAL_WAVE } from '../../core/constants.js';
 
 // Waves slice — the run director. Owns the run's flow (acts, waves,
@@ -28,6 +28,7 @@ export function createWaves(state, bus) {
   let clearT = 0;
 
   const diff = () => R.difficulty;
+  state.operators = OPERATORS;
   // acts past 3 (endless) lap the arenas
   const actDef = (act) => ACTS[(act - 1) % ACTS.length];
 
@@ -39,8 +40,10 @@ export function createWaves(state, bus) {
     };
   }
 
-  function begin(difficultyId) {
+  function begin(difficultyId, operatorId) {
     const d = DIFFICULTIES[difficultyId] || DIFFICULTIES.normal;
+    const op = OPERATORS[operatorId] || OPERATORS.vanguard;
+    R.operator = op;
     R.difficulty = d;
     R.act = 1;
     R.wave = 0;
@@ -56,7 +59,10 @@ export function createWaves(state, bus) {
     R.won = false;
     R.endless = false;
     killTimes = [];
-    bus.emit('run:start', { difficulty: d.id });
+    bus.emit('run:start', { difficulty: d.id, operator: op });
+    if (op.scrap) bus.emit('scrap:add', { amount: op.scrap, reason: 'operator' });
+    if (op.drone) bus.emit('shop:buy', { item: 'drone' });
+    for (let i = 0; i < (op.armor || 0); i++) bus.emit('shop:buy', { item: 'armor' });
     bus.emit('arena:load', { id: ACTS[0].arena });
     startAct(1, true);
   }
@@ -217,7 +223,7 @@ export function createWaves(state, bus) {
   }
 
   // ---------- events ----------
-  bus.on('run:begin', ({ difficulty }) => begin(difficulty));
+  bus.on('run:begin', ({ difficulty, operator }) => begin(difficulty, operator));
   bus.on('player:died', () => endRun(false));
   // victory → keep going
   bus.on('run:endless', () => {
