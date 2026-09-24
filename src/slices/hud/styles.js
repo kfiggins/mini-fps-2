@@ -62,7 +62,7 @@ export function injectHudStyles() {
   /* top */
   #h-top { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); text-align: center; }
   #h-wave { font: 700 26px/1 var(--font-head); letter-spacing: .2em; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
-  #h-wave-sub { font: 600 12px var(--font-head); letter-spacing: .22em; color: #9aa5b8; margin-top: 5px; }
+  #h-wave-sub { font: 700 12px var(--font-head); letter-spacing: .22em; color: #dfe5ee; margin-top: 5px; text-shadow: 0 1px 2px #000, 0 0 10px rgba(0,0,0,.8); }
   #h-boss { margin-top: 12px; width: min(620px, 70vw); }
   #h-boss-name { font: 700 14px var(--font-head); letter-spacing: .3em; color: #ff6a5a; margin-bottom: 6px; text-shadow: 0 0 12px #ff333366; }
   #h-boss-bar { position: relative; height: 12px; background: rgba(0,0,0,.6); border: 1px solid #ff5a4a66; border-radius: 3px; overflow: hidden; }
@@ -73,7 +73,7 @@ export function injectHudStyles() {
   /* score */
   #h-score { position: absolute; left: 28px; top: 20px; }
   #h-score-num { font: 700 30px/1 var(--font-head); letter-spacing: .04em; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
-  #h-combo { display: flex; align-items: center; gap: 8px; margin-top: 6px; opacity: .45; }
+  #h-combo { display: flex; align-items: center; gap: 8px; margin-top: 6px; opacity: .6; text-shadow: 0 1px 3px #000; }
   #h-combo.hot { opacity: 1; }
   #h-combo-x { font: 700 22px var(--font-head); color: hsl(calc(50 - var(--lv, 1) * 9), 100%, 62%); text-shadow: 0 0 calc(var(--lv, 1) * 4px) currentColor; }
   #h-combo-bar { width: 110px; height: 4px; background: rgba(255,255,255,.1); border-radius: 2px; overflow: hidden; }

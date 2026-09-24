@@ -66,8 +66,11 @@ export function createWaves(state, bus) {
     const A = actDef(act);
     state.mode = 'playing';
     bus.emit('act:start', { act, name: A.name, tagline: A.tagline, first });
-    bus.emit('hud:banner', { title: act > 3 ? `ENDLESS ${act} — ${A.name}` : `ACT ${act} — ${A.name}`, sub: act > 3 ? 'The machines never stop. Neither do you.' : A.tagline, color: act > 3 ? '#c084fc' : '#ffd36b', big: true });
-    startWave(R.wave + 1, 6);
+    startWave(R.wave + 1, 6, {
+      title: act > 3 ? `ENDLESS ${act} — ${A.name}` : `ACT ${act} — ${A.name}`,
+      sub: `WAVE ${R.wave + 1} · ${act > 3 ? 'The machines never stop. Neither do you.' : A.tagline}`,
+      color: act > 3 ? '#c084fc' : '#ffd36b', big: true,
+    });
   }
 
   function waveDef(n) {
@@ -100,7 +103,7 @@ export function createWaves(state, bus) {
     return a;
   }
 
-  function startWave(n, countdown = 4) {
+  function startWave(n, countdown = 4, actBanner = null) {
     R.wave = n;
     R.waveState = 'intermission';
     R.countdown = countdown;
@@ -113,7 +116,8 @@ export function createWaves(state, bus) {
       setMutator(keys[Math.floor(Math.random() * keys.length)]);
     }
     bus.emit('wave:intermission', { wave: n, boss: isBossWave, mutator: R.mutator });
-    bus.emit('hud:banner', {
+    if (actBanner) bus.emit('hud:banner', actBanner);
+    else bus.emit('hud:banner', {
       title: `WAVE ${n}`,
       sub: isBossWave ? '⚠ BOSS INCOMING ⚠' : R.mutator ? `${MUTATORS[R.mutator].label} — ${MUTATORS[R.mutator].sub}` : `ACT ${R.act} · ${local}/10`,
       color: isBossWave ? '#ff5555' : R.mutator ? '#c084fc' : '#e8ecf2',
