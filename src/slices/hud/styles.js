@@ -139,6 +139,9 @@ export function injectHudStyles() {
   #h-warn { position: absolute; top: 62%; left: 50%; transform: translateX(-50%); font: 700 16px var(--font-head); letter-spacing: .2em; color: #ff5a4a; opacity: 0; }
   #h-warn.show { animation: popup 1.8s ease forwards; }
 
+  #h-hints { position: absolute; left: 50%; bottom: 104px; transform: translateX(-50%); display: flex; gap: 14px; padding: 8px 14px;
+    background: rgba(8,10,15,.6); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; font: 600 13px var(--font-body); color: #cfd6e2; white-space: nowrap; }
+  #h-hints kbd { font: 700 11px var(--font-head); padding: 2px 6px; margin-right: 4px; border: 1px solid #3b4557; border-bottom-width: 2px; border-radius: 4px; background: #1b212c; }
   /* damage numbers */
   #h-dmgnums .dnum { position: absolute; left: 0; top: 0; font: 700 17px var(--font-head); color: #fff; text-shadow: 0 1px 3px #000, 0 0 6px rgba(0,0,0,.6); will-change: transform; }
   #h-dmgnums .dnum.crit { color: #ffd36b; font-size: 22px; }

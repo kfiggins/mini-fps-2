@@ -50,6 +50,10 @@ export function createHud(state, bus) {
     <div id="h-scope"><div class="scope-ring"></div><div class="scope-h"></div><div class="scope-v"></div><div class="scope-dot"></div></div>
     <div id="h-cockpit"><div class="ck-frame"></div><div id="h-mech-hp"><span>MECH INTEGRITY</span><div id="h-mech-bar"><div id="h-mech-fill"></div></div></div></div>
     <div id="h-rail"><div id="h-rail-fill"></div></div>
+    <div id="h-hints" class="hidden">
+      <span><kbd>WASD</kbd> move</span><span><kbd>SHIFT</kbd> sprint</span><span><kbd>SPACE</kbd> jump</span>
+      <span><kbd>RMB</kbd> aim</span><span><kbd>R</kbd> reload</span><span><kbd>1</kbd><kbd>2</kbd> swap</span><span><kbd>G</kbd> grenade</span>
+    </div>
   `;
 
   const E = {};
@@ -171,7 +175,12 @@ export function createHud(state, bus) {
     if (nums.length > 40) nums.shift().el.remove();
   });
 
+  // first run ever: a strip of control hints for the first waves
+  let hintT = 0;
   bus.on('run:start', () => {
+    let seen = false;
+    try { seen = localStorage.getItem('mfps2-hints') === '1'; localStorage.setItem('mfps2-hints', '1'); } catch { /* blocked */ }
+    hintT = seen ? 0 : 40;
     E['h-feed'].innerHTML = '';
     for (const d of dirs) d.el.remove();
     dirs.length = 0;
@@ -315,6 +324,8 @@ export function createHud(state, bus) {
       toggle(E['h-scope'], 'on', scoped);
       toggle(E['h-cockpit'], 'on', !!p.inMech);
       if (p.inMech) set('mechhp', E['h-mech-fill'], 'width', `${Math.max(0, mech.hp / mech.maxHp) * 100}%`);
+      if (hintT > 0 && state.mode === 'playing') hintT -= dt;
+      toggle($('h-hints'), 'hidden', !(hintT > 0));
       hitT = Math.max(0, hitT - dt);
       if (hitT === 0) E['h-hit'].classList.remove('on');
 

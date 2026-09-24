@@ -46,7 +46,7 @@ function makeMaterials() {
     accent: new THREE.MeshStandardMaterial({ color: 0x8b7a5a, roughness: 0.65, metalness: 0.05 }),
     wood: new THREE.MeshStandardMaterial({ color: 0x5b3d22, roughness: 0.55, metalness: 0.0 }),
     glove: new THREE.MeshStandardMaterial({ color: 0x2a2724, roughness: 0.85, metalness: 0 }),
-    sleeve: new THREE.MeshStandardMaterial({ color: 0x3a3f2c, roughness: 0.95, metalness: 0 }),
+    sleeve: new THREE.MeshStandardMaterial({ color: 0x353a2a, roughness: 0.92, metalness: 0, flatShading: false }),
     lens: new THREE.MeshStandardMaterial({ color: 0x0c1a22, roughness: 0.05, metalness: 1, envMapIntensity: 2 }),
     brass: new THREE.MeshStandardMaterial({ color: 0xc9a14a, roughness: 0.3, metalness: 1 }),
     shell: new THREE.MeshStandardMaterial({ color: 0xa3281e, roughness: 0.5, metalness: 0.2 }),
@@ -85,13 +85,16 @@ function hand(M, grip = true) {
 }
 
 function arm(M, len = 0.5) {
+  // tapered sleeve (narrow at the wrist), a rolled cuff and a glove cuff
   const g = new THREE.Group();
-  const fore = new THREE.CapsuleGeometry(0.038, len, 4, 10);
-  fore.rotateX(Math.PI / 2);
-  add(g, fore, M.sleeve, 0, 0, len / 2 + 0.04);
-  const cuff = new THREE.CylinderGeometry(0.042, 0.042, 0.05, 12);
+  const sleeve = new THREE.CylinderGeometry(0.036, 0.052, len, 12, 1);
+  sleeve.rotateX(Math.PI / 2);
+  add(g, sleeve, M.sleeve, 0, 0, len / 2 + 0.07);
+  const roll = new THREE.TorusGeometry(0.041, 0.012, 6, 14);
+  add(g, roll, M.sleeve, 0, 0, 0.08);
+  const cuff = new THREE.CylinderGeometry(0.038, 0.036, 0.06, 12);
   cuff.rotateX(Math.PI / 2);
-  add(g, cuff, M.glove, 0, 0, 0.05);
+  add(g, cuff, M.glove, 0, 0, 0.04);
   return g;
 }
 
@@ -316,7 +319,7 @@ export class Viewmodel {
     this.rHand = hand(this.M, true);
     this.lHand = hand(this.M, true);
     this.rArm = arm(this.M, 0.55);
-    this.lArm = arm(this.M, 0.6);
+    this.lArm = arm(this.M, 0.62);
 
     // springs
     this.kickZ = new Spring(260, 22);
@@ -390,7 +393,7 @@ export class Viewmodel {
     this.rArm.position.set(0.02, -0.12, 0.13);
     this.rArm.rotation.set(0.7, 0.35, 0);
     this.lArm.position.set(pose.lh[0] - 0.02, pose.lh[1] - 0.07, pose.lh[2] + 0.02);
-    this.lArm.rotation.set(0.75, -0.95, 0);
+    this.lArm.rotation.set(0.8, -0.9, 0);
     this.flash.position.copy(this.current.muzzle);
     this.equipT = instant ? 1 : 0;
     this.reloadP = -1;
