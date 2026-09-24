@@ -121,19 +121,27 @@ function buildRifle(M) {
   add(g, RB(0.02, 0.02, 0.2, 0.005), M.metal, 0, 0.028, 0.16); // buffer tube
   add(g, RB(0.012, 0.024, 0.07, 0.004), M.metal, 0.036, 0.03, -0.08); // port cover
   add(g, RB(0.02, 0.012, 0.03, 0.004), M.metal, 0, 0.07, 0.07); // charging handle
-  // red-dot optic
+  // red-dot optic: an open tube you look through (no solid plates in the
+  // sight line), a faint tinted lens and a bright glowing dot
   add(g, RB(0.042, 0.012, 0.07, 0.004), M.metal, 0, 0.083, -0.04);
-  add(g, RB(0.044, 0.05, 0.016, 0.006), M.metal, 0, 0.11, -0.005);
-  add(g, RB(0.044, 0.05, 0.016, 0.006), M.metal, 0, 0.11, -0.085);
-  add(g, RB(0.008, 0.05, 0.08, 0.003), M.metal, 0.02, 0.11, -0.045);
-  add(g, RB(0.008, 0.05, 0.08, 0.003), M.metal, -0.02, 0.11, -0.045);
-  add(g, RB(0.044, 0.008, 0.08, 0.003), M.metal, 0, 0.136, -0.045);
-  const lens = new THREE.Mesh(new THREE.PlaneGeometry(0.032, 0.036), new THREE.MeshStandardMaterial({
-    color: 0x66ffaa, transparent: true, opacity: 0.12, roughness: 0, metalness: 1,
+  add(g, RB(0.03, 0.018, 0.04, 0.003), M.metal, 0, 0.093, -0.045);
+  const tube = new THREE.CylinderGeometry(0.026, 0.026, 0.07, 24, 1, true);
+  tube.rotateX(Math.PI / 2);
+  const tubeMat = M.metal.clone();
+  tubeMat.side = THREE.DoubleSide;
+  add(g, tube, tubeMat, 0, 0.115, -0.045);
+  for (const z of [-0.08, -0.01]) add(g, new THREE.TorusGeometry(0.027, 0.004, 6, 24), M.metal, 0, 0.115, z);
+  add(g, RB(0.012, 0.012, 0.018, 0.003), M.metal, 0.03, 0.115, -0.045); // brightness knob
+  const lens = new THREE.Mesh(new THREE.CircleGeometry(0.025, 24), new THREE.MeshBasicMaterial({
+    color: 0x9fe8ff, transparent: true, opacity: 0.07, depthWrite: false,
   }));
-  lens.position.set(0, 0.11, -0.085);
+  lens.position.set(0, 0.115, -0.079);
   g.add(lens);
-  const dot = add(g, new THREE.SphereGeometry(0.0016, 8, 6), M.red, 0, 0.11, -0.084);
+  // over-bright (HDR) red so bloom gives the dot a soft halo
+  const dotMat = new THREE.MeshBasicMaterial();
+  dotMat.color.setRGB(5, 0.35, 0.3);
+  dotMat.toneMapped = false;
+  const dot = add(g, new THREE.SphereGeometry(0.0019, 12, 10), dotMat, 0, 0.115, -0.078);
   dot.renderOrder = 5;
   // magazine (separate so the reload can pull it)
   const mag = new THREE.Group();
@@ -141,7 +149,7 @@ function buildRifle(M) {
   add(mag, RB(0.042, 0.02, 0.078, 0.006), M.metal, 0, -0.145, 0.013, 0.18);
   mag.position.set(0, -0.02, -0.12);
   g.add(mag);
-  return { group: g, muzzle: new THREE.Vector3(0, 0.018, -0.79), sightY: 0.11, sightZ: -0.045, mag, port: new THREE.Vector3(0.04, 0.03, -0.08) };
+  return { group: g, muzzle: new THREE.Vector3(0, 0.018, -0.79), sightY: 0.115, sightZ: -0.045, mag, port: new THREE.Vector3(0.04, 0.03, -0.08) };
 }
 
 function buildMarksman(M) {
