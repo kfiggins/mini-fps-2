@@ -248,7 +248,11 @@ export function createRender(state, bus) {
       }
 
       // FOV (weapons publish fovScale for ADS)
-      const fov = state.settings.fov * (state.fovScale || 1);
+      // horizontal-at-16:9 → vertical, so ultrawides get extra side view
+      // instead of a stretched, slow-feeling fisheye
+      const h = ((state.settings.fovH || 90) * Math.PI) / 180;
+      const vBase = (2 * Math.atan(Math.tan(h / 2) / (16 / 9)) * 180) / Math.PI;
+      const fov = vBase * (state.fovScale || 1);
       if (Math.abs(camera.fov - fov) > 0.01) {
         camera.fov = fov;
         camera.updateProjectionMatrix();

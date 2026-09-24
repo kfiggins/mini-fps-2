@@ -13,7 +13,7 @@ export function createState() {
     // ---- menu (settings persisted to localStorage) ----
     settings: {
       sensitivity: 1,
-      fov: 78,
+      fovH: 90, // horizontal FOV at 16:9 (Hor+: wider screens see more at the sides)
       quality: 'high', // low | medium | high
       qualityAuto: true, // until the player picks one, drop quality if fps is low
       volume: { master: 0.8, sfx: 0.9, music: 0.55 },

@@ -23,6 +23,7 @@ function save(key, v) {
 export function createMenu(state, bus, { lock, unlock }) {
   injectMenuStyles();
   Object.assign(state.settings, load(SETTINGS_KEY, {}));
+  delete state.settings.fov; // old vertical-FOV setting (pre Hor+)
   const unlocks = load(UNLOCK_KEY, { overdrive: false });
   const best = load(BEST_KEY, {});
   const progress = load(PROGRESS_KEY, { maxAct: 1, won: false });
@@ -160,7 +161,7 @@ export function createMenu(state, bus, { lock, unlock }) {
       <label class="set-row"><span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${val}" data-set="${key}"><b>${fmt(val)}</b></label>`;
     return `<div class="m-title">SETTINGS</div>
       ${slider('sensitivity', 'Mouse sensitivity', 0.2, 3, 0.05, s.sensitivity, (v) => Number(v).toFixed(2))}
-      ${slider('fov', 'Field of view', 65, 100, 1, s.fov, (v) => `${v}°`)}
+      ${slider('fovH', 'Field of view (horizontal)', 70, 110, 1, s.fovH, (v) => `${v}°`)}
       ${slider('volume.master', 'Master volume', 0, 1, 0.05, s.volume.master, (v) => `${Math.round(v * 100)}%`)}
       ${slider('volume.sfx', 'Effects volume', 0, 1, 0.05, s.volume.sfx, (v) => `${Math.round(v * 100)}%`)}
       ${slider('volume.music', 'Music volume', 0, 1, 0.05, s.volume.music, (v) => `${Math.round(v * 100)}%`)}
@@ -304,7 +305,7 @@ export function createMenu(state, bus, { lock, unlock }) {
     if (k.startsWith('volume.')) state.settings.volume[k.slice(7)] = v;
     else state.settings[k] = v;
     const b = e.target.parentElement.querySelector('b');
-    if (b) b.textContent = k === 'fov' ? `${v}°` : k === 'sensitivity' ? v.toFixed(2) : `${Math.round(v * 100)}%`;
+    if (b) b.textContent = k === 'fovH' ? `${v}°` : k === 'sensitivity' ? v.toFixed(2) : `${Math.round(v * 100)}%`;
   });
   document.addEventListener('keydown', (e) => {
     if (e.code === 'Escape' && modal) closeModal();
