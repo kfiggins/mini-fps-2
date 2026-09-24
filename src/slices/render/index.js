@@ -197,10 +197,32 @@ export function createRender(state, bus) {
   let shakeT = 0;
   const baseRot = new THREE.Euler();
 
+  // auto quality: sample fps during live play; step down if it's struggling
+  let autoT = 0, autoSum = 0, autoN = 0;
+  function autoQuality(dt) {
+    const s = state.settings;
+    if (!s.qualityAuto || state.mode !== 'playing' || s.quality === 'low') return;
+    autoT += dt;
+    if (autoT < 2) return; // let shaders compile first
+    autoSum += state.fps || 60;
+    autoN++;
+    if (autoT < 7) return;
+    const avg = autoSum / autoN;
+    autoT = autoSum = autoN = 0;
+    if (avg < 42) {
+      s.quality = s.quality === 'high' ? 'medium' : 'low';
+      buildComposer();
+      bus.emit('hud:feed', { text: `GRAPHICS → ${s.quality.toUpperCase()} (auto, for smoother play)`, color: '#9aa5b8' });
+    } else {
+      s.qualityAuto = false; // it runs fine — stop checking
+    }
+  }
+
   return {
     renderer,
     // realDt: unscaled frame time
     render(realDt) {
+      autoQuality(realDt);
       // hit-stop recovers in real time
       if (stopT > 0) {
         stopT -= realDt;

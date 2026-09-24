@@ -244,6 +244,7 @@ export function createMenu(state, bus, { lock, unlock }) {
     }
     if (t.dataset.quality) {
       state.settings.quality = t.dataset.quality;
+      state.settings.qualityAuto = false;
       bus.emit('quality:changed');
       openModal('settings');
       return;

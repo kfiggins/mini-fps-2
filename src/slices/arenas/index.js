@@ -105,8 +105,9 @@ export function createArenas(state, bus) {
     if (info.hemi) info.hemi.intensity = base.hemi;
     if (info.sun) info.sun.intensity = base.sun;
     state.scene.environmentIntensity = base.env;
+    if (info.sky) info.sky.dome.visible = !(id === 'fog' || id === 'blackout');
     if (id === 'fog') {
-      f.color.setHex(0x8a8f96); f.near = 8; f.far = 42;
+      f.color.setHex(0x8a8f96); f.near = 3; f.far = 30;
       state.scene.background.setHex(0x8a8f96);
     } else if (id === 'blackout') {
       if (info.hemi) info.hemi.intensity = base.hemi * 0.18;
