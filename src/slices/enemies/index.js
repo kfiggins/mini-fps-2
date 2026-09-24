@@ -226,6 +226,7 @@ export function createEnemies(state, bus) {
 
   function kill(e, p) {
     e.alive = false;
+    e.deadAt = state.time;
     const pos = e.pos.clone();
     const center = e.center.clone();
     bus.emit('enemy:killed', {
@@ -1010,7 +1011,7 @@ export function createEnemies(state, bus) {
       }
       // compact the list occasionally
       if (L.length > 60) {
-        for (let i = L.length - 1; i >= 0; i--) if (!L[i].alive) { removeRig(L[i]); L.splice(i, 1); }
+        for (let i = L.length - 1; i >= 0; i--) if (!L[i].alive && state.time - (L[i].deadAt || 0) > 5) { removeRig(L[i]); L.splice(i, 1); }
       }
       // debris physics
       const col = state.world.collision;

@@ -217,13 +217,13 @@ export function sand(seed = 1, base = 0xc9a26b) {
       // wind ripples bent by noise + fine grit
       const r = Math.sin((v * 9 + u * 2 + ripple(u, v) * 4) * Math.PI * 2) * 0.5 + 0.5;
       const [d1] = grit(u, v);
-      return f(u, v) * 0.55 + r * 0.18 + smooth(0.006, 0.0, d1) * 0.25;
+      return f(u, v) * 0.55 + r * 0.2 + smooth(0.004, 0.0, d1) * 0.08;
     },
     color: (u, v, h) => {
       const m = macro(u, v);
       const k = 0.86 + (f(u, v) - 0.5) * 0.18 + (h - 0.5) * 0.1 + (m - 0.5) * 0.16;
       const [d1, , id] = grit(u, v);
-      const g = smooth(0.006, 0.0, d1) * (id - 0.5) * 0.5;
+      const g = smooth(0.004, 0.0, d1) * (id - 0.5) * 0.3;
       return [br * (k + g), bg * (k + g * 0.9), bb * (k + g * 0.8)];
     },
     rough: (u, v, h) => 0.94 - h * 0.06,
@@ -243,7 +243,7 @@ export function concrete(seed = 2, base = 0x9a968c, opts = {}) {
       const pu = (u * panels) % 1, pv = (v * panels) % 1;
       const seam = Math.min(pu, 1 - pu, pv, 1 - pv);
       const [d1] = pits(u, v);
-      return 0.7 + f(u, v) * 0.14 - smooth(0.008, 0.0, seam) * 0.45 - smooth(0.004, 0, d1) * 0.25;
+      return 0.7 + f(u, v) * 0.14 - smooth(0.008, 0.0, seam) * 0.45 - smooth(0.003, 0, d1) * 0.07;
     },
     color: (u, v, h) => {
       const s = stains(u, v);
@@ -412,7 +412,7 @@ export function asphalt(seed = 9, base = 0x3a3a3c) {
       const [d1, d2] = cracks(u, v);
       const crack = smooth(0.004, 0, d2 - d1) * smooth(0.55, 0.7, crackMask(u, v));
       const [g1] = grit(u, v);
-      return 0.6 + f(u, v) * 0.2 - crack * 0.35 + smooth(0.004, 0, g1) * 0.15;
+      return 0.6 + f(u, v) * 0.2 - crack * 0.35 + smooth(0.003, 0, g1) * 0.05;
     },
     color: (u, v, h) => {
       const k = 0.85 + (f(u, v) - 0.5) * 0.3 + (patch(u, v) - 0.5) * 0.25;

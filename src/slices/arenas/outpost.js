@@ -293,6 +293,14 @@ function buildCommandPost(kit, M, updaters) {
   kit.slab(X + 2.3, F2, 2.0, X + 2.4, F2 + 1.0, 4.6, M.dark, { bevel: 0.01 });
   kit.slab(X, F2, 1.9, X + 2.4, F2 + 1.0, 2.0, M.dark, { bevel: 0.01 });
   kit.stairs(X + 1.2, 10.6, '-z', 6.0, 1.6, 0, F2, M.steel, { sideMat: M.dark, open: true });
+  // interior lighting: ceiling panels + two warm lights per floor
+  const ceil = new THREE.MeshStandardMaterial({ color: 0xfff4e0, emissive: 0xffe8c0, emissiveIntensity: 2.5 });
+  for (const [x, y, z] of [[-3.5, F2 - 0.32, -1], [3.5, F2 - 0.32, 1.5], [-2, ROOF - 0.32, 1], [3.5, ROOF - 0.32, -2]]) {
+    kit.box(x, y, z, 1.4, 0.04, 0.5, ceil, { collide: false, cast: false, bevel: 0 });
+    const l = new THREE.PointLight(0xffe2b8, 2.6, 8, 2);
+    l.position.set(x, y - 0.4, z);
+    kit.scene.add(l);
+  }
   // ground-floor furniture (cover)
   kit.box(-3, 0.45, -3.5, 2.2, 0.9, 1, M.steel);
   kit.box(-3, 0.45, 3.2, 2.2, 0.9, 1, M.steel);
@@ -313,6 +321,47 @@ function buildCommandPost(kit, M, updaters) {
     t += dt;
     M.redLight.emissiveIntensity = (t % 1.6) < 0.25 ? 6 : 0.2;
   });
+  // window + door frames (dark trim around every opening)
+  const frame = (axis, at, c, w, y0, y1, out) => {
+    const t = 0.1, d = 0.08;
+    const o = at + out * (T / 2 + d / 2);
+    if (axis === 'x') {
+      kit.box(c, y1 + t / 2, o, w + 2 * t, t, d, M.dark, { collide: false, cast: false, bevel: 0.01 });
+      if (y0 > 0.05) kit.box(c, y0 - t / 2, o, w + 2 * t, t, d + 0.1, M.dark, { collide: false, cast: false, bevel: 0.01 });
+      for (const sx of [-1, 1]) kit.box(c + sx * (w / 2 + t / 2), (y0 + y1) / 2, o, t, y1 - y0, d, M.dark, { collide: false, cast: false, bevel: 0.01 });
+    } else {
+      kit.box(o, y1 + t / 2, c, d, t, w + 2 * t, M.dark, { collide: false, cast: false, bevel: 0.01 });
+      if (y0 > 0.05) kit.box(o, y0 - t / 2, c, d + 0.1, t, w + 2 * t, M.dark, { collide: false, cast: false, bevel: 0.01 });
+      for (const sz of [-1, 1]) kit.box(o, (y0 + y1) / 2, c + sz * (w / 2 + t / 2), d, y1 - y0, t, M.dark, { collide: false, cast: false, bevel: 0.01 });
+    }
+  };
+  for (const [c, w, y0, y1] of [[0, 2.6, 0, 2.7], [-5, 2, 1.1, 2.5], [5, 2, 1.1, 2.5], [-5, 2, F2 + 1.1, F2 + 2.5], [0, 2, F2 + 1.1, F2 + 2.5], [5, 2, F2 + 1.1, F2 + 2.5]]) frame('x', Z - T / 2, c, w, y0, y1, 1);
+  for (const [c, w, y0, y1] of [[0, 2.6, 0, 2.7], [5, 2, 1.1, 2.5], [0, 2, F2 + 1.1, F2 + 2.5], [5, 2, F2 + 1.1, F2 + 2.5]]) frame('x', -Z + T / 2, c, w, y0, y1, -1);
+  for (const [c, w, y0, y1] of [[0, 2.4, 0, 2.7], [-3.2, 1.8, 1.1, 2.5], [3.5, 1.8, 1.1, 2.5], [4, 1.6, F2 + 1.1, F2 + 2.5]]) frame('z', -X + T / 2, c, w, y0, y1, -1);
+  for (const [c, w, y0, y1] of [[-4.6, 1.2, 1.1, 2.5], [3.3, 1.6, F2, F2 + 2.4], [-3.5, 1.8, F2 + 1.1, F2 + 2.5]]) frame('z', X - T / 2, c, w, y0, y1, 1);
+  // base plinth, roof cornice, downspouts
+  kit.slab(-X - 0.06, 0, -Z - 0.06, X + 0.06, 0.45, -Z + 0.2, M.concreteDark, { collide: false, cast: false });
+  kit.slab(-X - 0.06, 0, Z - 0.2, -1.4, 0.45, Z + 0.06, M.concreteDark, { collide: false, cast: false });
+  kit.slab(1.4, 0, Z - 0.2, X + 0.06, 0.45, Z + 0.06, M.concreteDark, { collide: false, cast: false });
+  kit.slab(-X - 0.12, ROOF - 0.12, -Z - 0.12, X + 0.12, ROOF + 0.05, Z + 0.12, M.concreteDark, { collide: false });
+  for (const [x, z] of [[-X - 0.12, Z - 0.8], [X + 0.12, -Z + 0.8], [-X - 0.12, -Z + 0.8]]) {
+    kit.geo(new THREE.CylinderGeometry(0.07, 0.07, ROOF, 8), M.dark, { x, y: ROOF / 2, z });
+  }
+  // door sign with painted lettering
+  {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = '#2c3a2a'; g.fillRect(0, 0, 512, 128);
+    g.strokeStyle = '#d8c89a'; g.lineWidth = 6; g.strokeRect(8, 8, 496, 112);
+    g.fillStyle = '#e8dcb0'; g.font = 'bold 64px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('COMMAND POST 7', 256, 68);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.6), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }));
+    sign.position.set(0, 3.24, Z + 0.07);
+    kit.add(sign);
+  }
   // exterior dressing: awning over the south door, AC boxes, signage stripe
   kit.slab(-2, 2.8, Z, 2, 2.95, Z + 1.6, M.roof, { collide: false });
   kit.box(-6.5, 1.2, Z + 0.45, 1.2, 0.9, 0.5, M.steel, { collide: false });
