@@ -206,7 +206,7 @@ function standard(tex, opts = {}) {
   return m;
 }
 
-export function sand(seed = 1, base = 0xc9a26b) {
+function sandImpl(seed = 1, base = 0xc9a26b) {
   const f = makeFbm(4, 6, seed);
   const macro = makeFbm(2, 3, seed + 21);
   const ripple = makeFbm(2, 3, seed + 50);
@@ -232,7 +232,7 @@ export function sand(seed = 1, base = 0xc9a26b) {
   return standard(tex, { metalness: 1, tile: 7, env: 0.35, surface: 'dirt', normal: 0.8 });
 }
 
-export function concrete(seed = 2, base = 0x9a968c, opts = {}) {
+function concreteImpl(seed = 2, base = 0x9a968c, opts = {}) {
   const f = makeFbm(4, 6, seed);
   const stains = makeFbm(2, 4, seed + 9);
   const pits = makeCells(900, seed + 1);
@@ -261,7 +261,7 @@ export function concrete(seed = 2, base = 0x9a968c, opts = {}) {
 }
 
 // painted steel panels with rivets, edge wear and scratches
-export function metalPanel(seed = 3, base = 0x5d6b52, opts = {}) {
+function metalPanelImpl(seed = 3, base = 0x5d6b52, opts = {}) {
   const f = makeFbm(4, 5, seed);
   const wear = makeFbm(8, 4, seed + 4);
   const scratch = makeFbm(16, 2, seed + 8);
@@ -301,7 +301,7 @@ export function metalPanel(seed = 3, base = 0x5d6b52, opts = {}) {
   return standard(tex, { tile: opts.tile ?? 3, env: 1 });
 }
 
-export function corrugated(seed = 4, base = 0x8a8f94, opts = {}) {
+function corrugatedImpl(seed = 4, base = 0x8a8f94, opts = {}) {
   const f = makeFbm(4, 5, seed);
   const rust = makeFbm(4, 5, seed + 3);
   const ribs = opts.ribs ?? 12;
@@ -320,7 +320,7 @@ export function corrugated(seed = 4, base = 0x8a8f94, opts = {}) {
   return standard(tex, { tile: opts.tile ?? 3 });
 }
 
-export function hazard(seed = 5) {
+function hazardImpl(seed = 5) {
   const f = makeFbm(4, 5, seed);
   const wear = makeFbm(8, 4, seed + 1);
   const tex = generate({
@@ -339,7 +339,7 @@ export function hazard(seed = 5) {
   return standard(tex, { tile: 2 });
 }
 
-export function wood(seed = 6, base = 0x8a6a42) {
+function woodImpl(seed = 6, base = 0x8a6a42) {
   const grain = makeFbm(2, 5, seed);
   const f = makeFbm(8, 4, seed + 2);
   const [br, bg, bb] = hexRgb(base);
@@ -362,7 +362,7 @@ export function wood(seed = 6, base = 0x8a6a42) {
   return standard(tex, { metalness: 1, tile: 2, env: 0.4, surface: 'wood' });
 }
 
-export function fabric(seed = 7, base = 0xa89066) {
+function fabricImpl(seed = 7, base = 0xa89066) {
   const f = makeFbm(4, 5, seed);
   const [br, bg, bb] = hexRgb(base);
   const tex = generate({
@@ -381,7 +381,7 @@ export function fabric(seed = 7, base = 0xa89066) {
   return standard(tex, { metalness: 1, tile: 1.5, env: 0.3, surface: 'dirt' });
 }
 
-export function rock(seed = 8, base = 0x8c7a66) {
+function rockImpl(seed = 8, base = 0x8c7a66) {
   const f = makeFbm(4, 7, seed);
   const cr = makeCells(40, seed + 1);
   const [br, bg, bb] = hexRgb(base);
@@ -400,7 +400,7 @@ export function rock(seed = 8, base = 0x8c7a66) {
   return standard(tex, { metalness: 1, tile: 4, env: 0.4, surface: 'concrete' });
 }
 
-export function asphalt(seed = 9, base = 0x3a3a3c) {
+function asphaltImpl(seed = 9, base = 0x3a3a3c) {
   const f = makeFbm(8, 5, seed);
   const patch = makeFbm(2, 4, seed + 2);
   const cracks = makeCells(14, seed + 5);
@@ -427,7 +427,7 @@ export function asphalt(seed = 9, base = 0x3a3a3c) {
 }
 
 // walkable steel grating: alpha-tested holes
-export function grating(seed = 10, base = 0x5a5f66) {
+function gratingImpl(seed = 10, base = 0x5a5f66) {
   const f = makeFbm(4, 4, seed);
   const [br, bg, bb] = hexRgb(base);
   const bars = 24;
@@ -450,7 +450,7 @@ export function grating(seed = 10, base = 0x5a5f66) {
 }
 
 // dark tech panel with glowing seams (reactor)
-export function techPanel(seed = 11, base = 0x1c2230, glow = 0x19e6ff, opts = {}) {
+function techPanelImpl(seed = 11, base = 0x1c2230, glow = 0x19e6ff, opts = {}) {
   const f = makeFbm(4, 5, seed);
   const [br, bg, bb] = hexRgb(base);
   const [gr, gg, gb] = hexRgb(glow);
@@ -481,7 +481,7 @@ export function techPanel(seed = 11, base = 0x1c2230, glow = 0x19e6ff, opts = {}
   return standard(tex, { tile: opts.tile ?? 4, emissiveIntensity: opts.emissiveIntensity ?? 3 });
 }
 
-export function rust(seed = 12, base = 0x6b3b22) {
+function rustImpl(seed = 12, base = 0x6b3b22) {
   const f = makeFbm(4, 7, seed);
   const g = makeFbm(8, 4, seed + 1);
   const [br, bg, bb] = hexRgb(base);
@@ -538,3 +538,33 @@ export function lava(color = 0xff6a1a) {
   mat.userData.update = (dt) => { mat.uniforms.uTime.value += dt; };
   return mat;
 }
+
+// Texture generation is the slow part of building an arena, so each recipe
+// is memoised by its arguments: later loads clone the material and share
+// the already-generated textures (arena unloads never dispose them).
+const memo = new Map();
+function cached(name, impl) {
+  return (...args) => {
+    const key = `${name}|${JSON.stringify(args)}`;
+    let m = memo.get(key);
+    if (!m) {
+      m = impl(...args);
+      memo.set(key, m);
+    }
+    const c = m.clone();
+    c.userData = { ...m.userData };
+    return c;
+  };
+}
+export const sand = cached('sand', sandImpl);
+export const concrete = cached('concrete', concreteImpl);
+export const metalPanel = cached('metalPanel', metalPanelImpl);
+export const corrugated = cached('corrugated', corrugatedImpl);
+export const hazard = cached('hazard', hazardImpl);
+export const wood = cached('wood', woodImpl);
+export const fabric = cached('fabric', fabricImpl);
+export const rock = cached('rock', rockImpl);
+export const asphalt = cached('asphalt', asphaltImpl);
+export const grating = cached('grating', gratingImpl);
+export const techPanel = cached('techPanel', techPanelImpl);
+export const rust = cached('rust', rustImpl);

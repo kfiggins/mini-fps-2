@@ -29,10 +29,8 @@ export function createArenas(state, bus) {
     root.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
       if (o.material) {
-        for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
-          for (const k of ['map', 'normalMap', 'roughnessMap', 'emissiveMap', 'alphaMap']) m[k]?.dispose?.();
-          m.dispose();
-        }
+        // textures are memoised across loads (see textures.js) — only materials go
+        for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.dispose();
       }
     });
     if (state.scene.environment) state.scene.environment.dispose();

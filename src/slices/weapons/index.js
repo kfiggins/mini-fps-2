@@ -295,6 +295,8 @@ export function createWeapons(state, bus) {
     if (anyHit) {
       W.hits = (W.hits || 0) + 1;
       bus.emit('shot:result', { head: anyHead, kill: anyKill, dealt: totalDealt });
+      // a whisper of hit-stop sells headshot kills
+      if (anyHead && anyKill) bus.emit('hitstop', { duration: 0.045, scale: 0.15 });
       bus.emit('sfx', { id: anyHead ? 'headshot' : 'hit', vol: anyHead ? 0.9 : 0.6 });
     }
   }
