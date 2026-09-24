@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Audio Lab</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root { color-scheme: dark; --bg: #111418; --panel: #1a1f26; --line: #2b323c; --text: #dfe6ee; --muted: #8a96a3; --accent: #ffb347; }
+    body { margin: 0; padding: 16px; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
+    h1 { margin: 0 0 12px; font-size: 20px; }
+    h2 { margin: 0 0 8px; font-size: 15px; color: var(--accent); }
+    section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+    button { background: #242b35; color: var(--text); border: 1px solid var(--line); border-radius: 5px; padding: 6px 8px; cursor: pointer; font: inherit; }
+    button:hover { border-color: var(--accent); }
+    .muted { color: var(--muted); }
+    pre { white-space: pre-wrap; font-size: 12px; max-height: 420px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Mini FPS 2 — Audio Lab</h1>
+  <p class="muted">Click any button to unlock audio. Positional ids play in front of the listener at the chosen distance.</p>
+  <div id="app"></div>
+  <script type="module" src="/src/slices/audio/lab.js"></script>
+</body>
+</html>

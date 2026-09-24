@@ -1,0 +1,13 @@
+{
+  "outpost": [
+    { "name": "spawn", "pos": [0, 1.7, 33], "yaw": 0 },
+    { "name": "cp-front", "pos": [0, 1.7, 16], "yaw": 0, "pitch": 0.15 },
+    { "name": "cp-inside", "pos": [-2, 1.7, 2], "yaw": 0.6 },
+    { "name": "cp-roof", "pos": [2, 9.5, 2], "yaw": 2.4, "pitch": -0.15 },
+    { "name": "containers", "pos": [14, 1.7, -14], "yaw": -0.9 },
+    { "name": "tower-nw", "pos": [-16, 1.7, -16], "yaw": 0.8, "pitch": 0.12 },
+    { "name": "heli", "pos": [-5, 1.7, -18], "yaw": 1.2 },
+    { "name": "comms", "pos": [18, 1.7, 8], "yaw": -1.9 },
+    { "name": "overview", "pos": [0, 30, 55], "yaw": 0, "pitch": -0.55 }
+  ]
+}

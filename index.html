@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini FPS 2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --font-head: 'Chakra Petch', 'Rajdhani', system-ui, sans-serif;
+        --font-body: 'Rajdhani', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #05070b; }
+      canvas { display: block; }
+      button { font-family: inherit; }
+      .hidden { display: none; }
+      #boot { position: fixed; inset: 0; display: grid; place-items: center; background: #05070b; color: #9aa5b8; z-index: 100;
+        font: 700 14px var(--font-head); letter-spacing: .4em; transition: opacity .6s; }
+      #boot.done { opacity: 0; pointer-events: none; }
+      #boot .bar { width: 220px; height: 2px; background: #1b212c; margin-top: 14px; overflow: hidden; }
+      #boot .bar i { display: block; height: 100%; width: 40%; background: #ffd36b; animation: boot 1s ease-in-out infinite; }
+      @keyframes boot { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+      #unsupported { position: fixed; inset: 0; display: grid; place-items: center; color: #eee; font: 18px system-ui; text-align: center; padding: 20px; }
+    </style>
+  </head>
+  <body>
+    <div id="hud"></div>
+    <div id="intermission" class="hidden">
+      <div id="offer-title"></div>
+      <div id="offer-sub"></div>
+      <div id="offer-cards"></div>
+      <div id="shop-panel"></div>
+    </div>
+    <div id="menu"></div>
+    <div id="modal" class="hidden"></div>
+    <div id="fade"></div>
+    <div id="boot"><div>BUILDING THE ARENA<div class="bar"><i></i></div></div></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
