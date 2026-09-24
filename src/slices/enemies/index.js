@@ -11,7 +11,7 @@ import { GRAVITY } from '../../core/constants.js';
 //
 // Listens: enemy:spawn, damage:enemy, explode, enemies:freeze, enemies:clear,
 //          run:start, arena:ready
-// Emits:   enemy:spawned, enemy:hit, enemy:killed, boss:phase, damage:player,
+// Emits:   enemy:hit, enemy:killed, damage:player,
 //          sfx, fx:*, light, shake, hitstop, hud:banner, player:velocity
 // Publishes state.enemies: { list, boss, alive }
 
@@ -143,7 +143,6 @@ export function createEnemies(state, bus) {
     E.list.push(e);
     bus.emit('fx:beam', { pos: { x: pos.x, y: pos.y, z: pos.z }, color: cfg.model.glow, height: e.height + 3 });
     bus.emit('sfx', { id: opts.minion ? 'summon' : 'enemy_spawn', pos, vol: 0.6 });
-    bus.emit('enemy:spawned', { enemy: e });
     return e;
   }
 
@@ -201,6 +200,8 @@ export function createEnemies(state, bus) {
     for (const k of Object.keys(e.cfg.phase2)) {
       if (e.atk[k]?.interval) e.timers[k] = rand(...e.atk[k].interval) * 0.4;
     }
+    if (e.atk.shock && e.timers.shock == null) e.timers.shock = 2;
+    if (e.atk.summon && e.timers.summon == null) e.timers.summon = e.atk.summon.cd * 0.5;
     if (e.cfg.phase2.enrage) {
       e.enraged = true;
       e.rate = e.cfg.phase2.enrage.rate;
@@ -214,7 +215,6 @@ export function createEnemies(state, bus) {
     e.rig.mats.glow.emissiveIntensity = 5;
     e.stun = 0.9;
     restoreTint(e);
-    bus.emit('boss:phase', { enemy: e, phase: 2 });
     bus.emit('hud:banner', { title: `${e.cfg.name}`, sub: 'PHASE 2 — HIT THE CORE', color: '#ff5555' });
     bus.emit('sfx', { id: 'boss_enrage', pos: e.pos });
     bus.emit('shake', 0.7);
@@ -239,13 +239,14 @@ export function createEnemies(state, bus) {
     bus.emit('light', { pos: center, color: 0xff8844, intensity: 30 * scale, dist: 10 * scale, life: 0.25 });
     breakApart(e, p);
     if (e.laser) e.laser.visible = false;
-    // affixes & specials on death
-    if (e.cfg.dive) {
+    // affixes & specials on death (not when the boss wipe clears the field)
+    const wiped = p.source === 'bosswipe';
+    if (e.cfg.dive && !wiped) {
       bus.emit('explode', { pos: center, radius: e.cfg.dive.radius, damage: 45, playerDamage: e.cfg.dive.dmg * 0.7 * e.dmgMult, hurtsPlayer: true, source: 'wasp', scale: 1, color: 0xffaa22, sourceEnemy: e });
     }
-    if (e.elite === 'volatile') attacks.strike(pos.x, pos.y, pos.z, Math.round(35 * e.dmgMult), 4, 0.7, e);
-    if (e.elite === 'splitting') {
-      for (let i = 0; i < 2; i++) spawn({ type: 'rusher', at: pos, minion: true, hpMult: e.maxHp / 400, dmgMult: e.dmgMult, accuracy: e.accuracy });
+    if (e.elite === 'volatile' && !wiped) attacks.strike(pos.x, pos.y, pos.z, Math.round(35 * e.dmgMult), 4, 0.7, e);
+    if (e.elite === 'splitting' && !wiped) {
+      for (let i = 0; i < 2; i++) spawn({ type: 'rusher', at: pos, minion: true, baseHpMult: state.run.difficulty?.enemyHp ?? 1, dmgMult: e.dmgMult, accuracy: e.accuracy });
     }
     if (e.boss) {
       bus.emit('hitstop', { duration: 0.6, scale: 0.15 });
@@ -669,7 +670,7 @@ export function createEnemies(state, bus) {
       firing = true;
       muzzleWorld(e, _m);
       const tele = a.telegraph ?? 1.2;
-      if (st.lost > 0.45) { e.aim = null; e.laser.visible = false; continue; }
+      if (st.lost > 0.45) { e.aim = null; if (e.laser) e.laser.visible = false; continue; }
       if (st.t >= tele - (a.lock ?? 0.3) && !st.lock) st.lock = new THREE.Vector3(pl.pos.x, pl.pos.y - 0.4, pl.pos.z);
       const target = st.lock || _t.set(pl.pos.x, pl.pos.y - 0.4, pl.pos.z);
       attacks.aimLaser(e.laser, _m, target, key === 'laser' ? 0.06 + st.t * 0.05 : 0.012, st.lock ? 0xff2222 : 0xffdd44);
@@ -679,7 +680,7 @@ export function createEnemies(state, bus) {
         bus.emit('sfx', { id: key === 'laser' ? 'laser_fire' : 'sniper_fire', pos: _m });
         if (key === 'laser') bus.emit('fx:beam', { from: _m.clone(), to: target.clone(), color: 0xff3322, width: 3 });
         e.aim = null;
-        e.laser.visible = false;
+        if (e.laser) e.laser.visible = false;
         e.recoil = 1;
       }
     }
@@ -695,8 +696,6 @@ export function createEnemies(state, bus) {
           const d2 = Math.hypot(pl.pos.x - e.pos.x, pl.pos.z - e.pos.z);
           if (d2 < reach * 1.2 && Math.abs(dy) < 1.4) {
             bus.emit('damage:player', { amount: dmg(atk.melee.dmg), kind: 'melee', from: e.center, source: e });
-            const s = state.stats || {};
-            if (s.thorns) bus.emit('damage:enemy', { enemy: e, amount: Math.max(50, Math.round(e.maxHp * 0.25)) * s.thorns, part: 'body', source: 'thorns', point: e.center, depth: 1 });
           }
         }
       } else if (e.meleeCd <= 0 && dist < reach && Math.abs(dy) < 1.4) {

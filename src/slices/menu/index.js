@@ -30,6 +30,7 @@ export function createMenu(state, bus, { lock, unlock }) {
   let screen = 'title';
   let modal = null;
   let orbit = 0;
+  let unlockedT = 0;
 
   const diffs = () => [
     { id: 'easy', label: 'EASY', desc: 'Kids & new recruits. Tougher you, weaker robots.' },
@@ -102,7 +103,7 @@ export function createMenu(state, bus, { lock, unlock }) {
     return `
       <div class="o-wrap ${won ? 'won' : 'lost'}">
         <div class="o-title">${won ? 'VICTORY' : 'K.I.A.'}</div>
-        <div class="o-sub">${won ? `ALL 30 WAVES CLEARED ON ${R.difficulty.label}` : `FELL ON WAVE ${R.wave} · ACT ${R.act}`}</div>
+        <div class="o-sub">${won ? `ALL 30 WAVES CLEARED ON ${R.difficulty.label}` : R.endless ? `ENDLESS · FELL ON WAVE ${R.wave}` : `FELL ON WAVE ${R.wave} · ACT ${R.act}`}</div>
         <div class="o-score">${R.score.toLocaleString()}<span>${R.score >= b.score ? ' · NEW BEST!' : ` · best ${b.score.toLocaleString()}`}</span></div>
         ${won && d === 'normal' && !unlocks._justOverdrive ? '' : ''}
         ${unlocks._justOverdrive ? '<div class="o-unlock">🔓 OVERDRIVE DIFFICULTY UNLOCKED</div>' : ''}
@@ -119,7 +120,8 @@ export function createMenu(state, bus, { lock, unlock }) {
         <div class="o-kills">${kills}</div>
         ${buildSummary()}
         <div class="t-row">
-          <button class="t-play small" data-act="again">RUN IT BACK</button>
+          ${won ? '<button class="t-play small endless" data-act="endless">GO ENDLESS</button>' : ''}
+          <button class="${won ? 't-btn' : 't-play small'}" data-act="again">RUN IT BACK</button>
           <button class="t-btn" data-act="menu">MAIN MENU</button>
         </div>
       </div>`;
@@ -255,6 +257,11 @@ export function createMenu(state, bus, { lock, unlock }) {
     if (!act) return;
     bus.emit('sfx', { id: 'ui_click' });
     if (act === 'play' || act === 'again') startRun();
+    else if (act === 'endless') {
+      screen = 'none';
+      render();
+      bus.emit('run:endless');
+    }
     else if (act === 'resume') {
       screen = 'none';
       render();
@@ -336,7 +343,17 @@ export function createMenu(state, bus, { lock, unlock }) {
       cam.position.set(Math.cos(orbit) * r, 13 + Math.sin(orbit * 0.7) * 2, Math.sin(orbit) * r);
       cam.lookAt(0, 3, 0);
     },
-    update() {
+    update(dt) {
+      // playing without the mouse captured (a lock the browser refused) → pause
+      if (state.mode === 'playing' && !state.input.locked && !state.autopilot && screen === 'none') {
+        unlockedT += dt;
+        if (unlockedT > 0.6) {
+          unlockedT = 0;
+          state.mode = 'paused';
+          screen = 'pause';
+          render();
+        }
+      } else unlockedT = 0;
       const showInter = state.mode === 'offer';
       if (inter.classList.contains('hidden') === showInter) inter.classList.toggle('hidden', !showInter);
     },

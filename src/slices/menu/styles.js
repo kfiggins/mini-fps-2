@@ -19,6 +19,7 @@ export function injectMenuStyles() {
     box-shadow: 0 10px 40px rgba(255,190,60,.35); transition: transform .15s, filter .15s; margin-top: 8px; }
   .t-play:hover { transform: scale(1.05); filter: brightness(1.1); }
   .t-play.small { font-size: 20px; padding: 12px 40px 12px 48px; }
+  .t-play.endless { background: linear-gradient(180deg, #e0b0ff, #a855f7); box-shadow: 0 10px 40px rgba(168,85,247,.4); }
   .t-diffs { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
   .t-diff { width: 230px; padding: 12px 14px; text-align: left; cursor: pointer; color: #cfd6e2; background: rgba(12,15,22,.8); border: 1px solid #2c3444; border-radius: 10px; transition: all .15s; font-family: var(--font-body); }
   .t-diff b { display: block; font: 700 16px var(--font-head); letter-spacing: .2em; color: #fff; margin-bottom: 4px; }

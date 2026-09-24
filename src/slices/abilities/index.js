@@ -55,13 +55,20 @@ export function createAbilities(state, bus) {
     return Math.round(base * (s.damageMult || 1) * (1 + (state.run.wave - 1) * 0.035));
   }
 
+  // per-cast meshes own their geometry/material — free them when removed
+  function dispose(obj) {
+    if (!obj) return;
+    root.remove(obj);
+    obj.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); });
+  }
+
   function clearAll() {
     grapple = null;
     rope.visible = claw.visible = false;
-    for (const o of [heal, shield, decoy]) if (o?.mesh) root.remove(o.mesh);
+    for (const o of [heal, shield, decoy]) if (o?.mesh) dispose(o.mesh);
     heal = shield = decoy = null;
-    if (laser) { root.remove(laser.mesh); laser = null; }
-    for (const m of missiles) root.remove(m.mesh);
+    if (laser) { dispose(laser.mesh); laser = null; }
+    for (const m of missiles) dispose(m.mesh);
     missiles.length = 0;
     overclockT = 0;
     A.shield = null;
@@ -87,7 +94,7 @@ export function createAbilities(state, bus) {
       mesh.add(cyl, disc);
       mesh.position.set(p.pos.x, y, p.pos.z);
       root.add(mesh);
-      if (heal) root.remove(heal.mesh);
+      if (heal) dispose(heal.mesh);
       heal = { mesh, x: p.pos.x, y, z: p.pos.z, t: 8 };
       bus.emit('sfx', { id: 'heal_field' });
     },
@@ -119,7 +126,7 @@ export function createAbilities(state, bus) {
     },
     bubble() {
       const p = state.player;
-      if (shield) root.remove(shield.mesh);
+      if (shield) dispose(shield.mesh);
       const mesh = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 20), glass(0x7fd8ff, 0.18));
       const c = { x: p.pos.x, y: p.pos.y - p.eye + 1.4, z: p.pos.z };
       mesh.position.set(c.x, c.y, c.z);
@@ -161,7 +168,7 @@ export function createAbilities(state, bus) {
       mesh.add(body, head);
       mesh.position.set(x, y, z);
       root.add(mesh);
-      if (decoy) root.remove(decoy.mesh);
+      if (decoy) dispose(decoy.mesh);
       decoy = { mesh, x, y, z, t: 6 };
       A.decoy = { x, y: y + 1.7, z };
       bus.emit('sfx', { id: 'teleport' });
@@ -170,7 +177,7 @@ export function createAbilities(state, bus) {
       const p = state.player;
       const s = state.stats || {};
       bus.emit('enemies:freeze', { duration: 7 * (s.novaMult || 1), bossDuration: 2 * (s.novaMult || 1) });
-      bus.emit('fx:ring', { pos: { x: p.pos.x, y: p.pos.y - p.eye, z: p.pos.z }, radius: 0.5, color: 0x7fd8ff, life: 0.001 });
+      bus.emit('fx:ring', { pos: { x: p.pos.x, y: p.pos.y - p.eye, z: p.pos.z }, radius: 28, color: 0x7fd8ff, life: 0.7, grow: true });
       bus.emit('fx:burst', { pos: p.pos.clone(), color: 0x9fe6ff, count: 80, speed: 14, life: 0.8 });
       bus.emit('shake', 0.5);
       bus.emit('aberration', 1);
@@ -227,7 +234,7 @@ export function createAbilities(state, bus) {
     if (shield.hp <= 0) {
       bus.emit('fx:explosion', { pos: shield.mesh.position.clone(), color: 0x7fd8ff, scale: 1, harmless: true });
       bus.emit('sfx', { id: 'bubble_break' });
-      root.remove(shield.mesh);
+      dispose(shield.mesh);
       shield = null;
       A.shield = null;
       bus.emit('hud:feed', { text: 'SHIELD DOWN', color: '#7fd8ff' });
@@ -287,14 +294,14 @@ export function createAbilities(state, bus) {
           bus.emit('heal', { amount: 14 * dt });
           if (Math.random() < dt * 10) bus.emit('fx:burst', { pos: { x: p.pos.x + (Math.random() - 0.5), y: p.pos.y - 1.2, z: p.pos.z + (Math.random() - 0.5) }, color: 0x3dff8a, count: 1, speed: 1, life: 0.6 });
         }
-        if (heal.t <= 0) { root.remove(heal.mesh); heal = null; }
+        if (heal.t <= 0) { dispose(heal.mesh); heal = null; }
       }
 
       if (shield) {
         shield.t -= dt;
         shield.mesh.material.opacity = Math.max(0.14, shield.mesh.material.opacity - dt * 0.8);
         shield.mesh.rotation.y += dt * 0.3;
-        if (shield.t <= 0) { root.remove(shield.mesh); shield = null; A.shield = null; }
+        if (shield.t <= 0) { dispose(shield.mesh); shield = null; A.shield = null; }
       }
 
       if (decoy) {
@@ -302,8 +309,8 @@ export function createAbilities(state, bus) {
         decoy.mesh.rotation.y += dt * 2;
         decoy.mesh.children.forEach((c) => { c.material.opacity = 0.3 + Math.sin(state.time * 20) * 0.08; });
         if (decoy.t <= 0) {
-          bus.emit('explode', { pos: { x: decoy.x, y: decoy.y + 1, z: decoy.z }, radius: 4.5, damage: scaleDmg(110), source: 'decoy', hurtsPlayer: false, scale: 1.2, color: 0x66e0ff });
-          root.remove(decoy.mesh);
+          bus.emit('explode', { pos: { x: decoy.x, y: decoy.y + 1, z: decoy.z }, radius: 4.5 * (state.stats?.blastRadius || 1), damage: scaleDmg(110), source: 'decoy', hurtsPlayer: false, scale: 1.2, color: 0x66e0ff });
+          dispose(decoy.mesh);
           decoy = null;
           A.decoy = null;
         }
@@ -328,8 +335,8 @@ export function createAbilities(state, bus) {
           if (m.target.alive && mp.distanceTo(m.target.center) < 2) {
             bus.emit('damage:enemy', { enemy: m.target, amount: scaleDmg(120), part: 'body', source: 'missile', point: m.target.center, depth: 1 });
           }
-          bus.emit('explode', { pos: mp.clone(), radius: 3.5, damage: scaleDmg(70), source: 'missile', hurtsPlayer: false, scale: 1.1, color: 0xff8833 });
-          root.remove(m.mesh);
+          bus.emit('explode', { pos: mp.clone(), radius: 3.5 * (state.stats?.blastRadius || 1), damage: scaleDmg(70), source: 'missile', hurtsPlayer: false, scale: 1.1, color: 0xff8833 });
+          dispose(m.mesh);
           missiles.splice(i, 1);
         }
       }
@@ -360,7 +367,7 @@ export function createAbilities(state, bus) {
           bus.emit('fx:beam', { from: { x: _o.x, y: _o.y - 0.25, z: _o.z }, to: e.center.clone(), color: 0xff3355, width: 0.6 });
           bus.emit('damage:enemy', { enemy: e, amount: scaleDmg(140), part: 'body', source: 'laser', point: e.center, depth: 1 });
         }
-        if (k >= 1) { root.remove(L.mesh); laser = null; }
+        if (k >= 1) { dispose(L.mesh); laser = null; }
       }
     },
   };

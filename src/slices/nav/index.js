@@ -27,7 +27,7 @@ export function createNav(state, bus) {
     state.nav = {
       graph,
       buildMs: ms,
-      nearest: (x, feetY, z) => graph.nearest(x, feetY, z),
+      nearest: (x, feetY, z, preferReachable) => graph.nearest(x, feetY, z, preferReachable),
       nodePos: (i, out) => graph.nodePos(i, out),
       costAt: (x, feetY, z) => {
         const n = graph.nearest(x, feetY, z);

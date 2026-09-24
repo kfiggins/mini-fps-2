@@ -6,7 +6,7 @@ import { injectStyles } from './styles.js';
 // Armory weapon offer, and every on-kill / on-hurt effect the cards grant.
 //
 // Listens: run:start, offer:open, offer:reroll, armory:open, enemy:killed,
-//          player:hurt, key, act:start
+//          player:hurt, key
 // Emits:   offer:picked, armory:done, ability:assign, weapon:give, heal,
 //          damage:enemy, fx:arc, build:changed, synergy, hud:banner, hud:feed, sfx
 // Publishes state.stats, state.build, state.codex
@@ -394,8 +394,14 @@ export function createUpgrades(state, bus) {
       }
     }
   });
-  bus.on('player:hurt', () => {
-    if (state.stats?.adrenalSurge) surgeT = 3;
+  bus.on('player:hurt', ({ kind, source, amount, absorbed }) => {
+    const s = state.stats;
+    if (s?.adrenalSurge) surgeT = 3;
+    // Thorns: only when a melee hit actually landed on you
+    if (s?.thorns && kind === 'melee' && source?.alive && (amount || 0) + (absorbed || 0) > 0) {
+      const base = source.boss ? source.maxHp * 0.02 : Math.max(50, source.maxHp * 0.25);
+      bus.emit('damage:enemy', { enemy: source, amount: Math.round(base * s.thorns), part: 'body', source: 'thorns', point: source.center, depth: 1 });
+    }
   });
 
   return {

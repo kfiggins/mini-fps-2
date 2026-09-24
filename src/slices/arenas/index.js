@@ -53,6 +53,7 @@ export function createArenas(state, bus) {
     const ctx = { scene: root, realScene: state.scene, renderer: state.renderer, kit, rng, emitters: [] };
     info = entry.build(ctx);
     pulseT = 0;
+    base = null;
     kit.finish();
 
     const floorSurface = info.floorSurface || 'dirt';
@@ -85,6 +86,37 @@ export function createArenas(state, bus) {
   }
 
   bus.on('arena:load', ({ id }) => load(id));
+
+  // wave mutators that change the look of the arena
+  let base = null;
+  function captureBase() {
+    const f = state.scene.fog;
+    base = {
+      fogColor: f.color.getHex(), near: f.near, far: f.far, bg: state.scene.background.getHex(),
+      hemi: info.hemi?.intensity ?? 1, sun: info.sun?.intensity ?? 1, env: state.scene.environmentIntensity,
+    };
+  }
+  function applyMutator(id) {
+    if (!info) return;
+    if (!base) captureBase();
+    const f = state.scene.fog;
+    f.color.setHex(base.fogColor); f.near = base.near; f.far = base.far;
+    state.scene.background.setHex(base.bg);
+    if (info.hemi) info.hemi.intensity = base.hemi;
+    if (info.sun) info.sun.intensity = base.sun;
+    state.scene.environmentIntensity = base.env;
+    if (id === 'fog') {
+      f.color.setHex(0x8a8f96); f.near = 8; f.far = 42;
+      state.scene.background.setHex(0x8a8f96);
+    } else if (id === 'blackout') {
+      if (info.hemi) info.hemi.intensity = base.hemi * 0.18;
+      if (info.sun) info.sun.intensity = base.sun * 0.12;
+      state.scene.environmentIntensity = base.env * 0.25;
+      f.color.setHex(0x05070c); f.near = 20; f.far = 90;
+      state.scene.background.setHex(0x05070c);
+    }
+  }
+  bus.on('mutator', ({ id }) => applyMutator(id));
 
   // ---- the Reactor Core pulse: charge (telegraph) → floor shockwave ----
   let pulseT = 0;

@@ -94,7 +94,10 @@ export function createRender(state, bus) {
     const ratio = Math.min(window.devicePixelRatio, quality.ratio);
     renderer.setPixelRatio(ratio);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    if (composer) composer.dispose();
+    if (composer) {
+      for (const p of composer.passes) p.dispose?.();
+      composer.dispose();
+    }
     const w = Math.floor(window.innerWidth * ratio);
     const h = Math.floor(window.innerHeight * ratio);
     const rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, samples: quality.samples });

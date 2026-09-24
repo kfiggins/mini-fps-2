@@ -30,6 +30,8 @@ export function createMech(state, bus) {
   const rockets = [];
   const root = new THREE.Group();
   state.scene.add(root);
+  const rocketGeo = new THREE.ConeGeometry(0.14, 0.6, 8).rotateX(Math.PI / 2);
+  const rocketMat = new THREE.MeshStandardMaterial({ color: 0xd8dde5, emissive: 0xff5533, emissiveIntensity: 1.5 });
 
   // cockpit cannons in the viewmodel scene
   const mat = new THREE.MeshStandardMaterial({ color: 0x39404d, roughness: 0.4, metalness: 0.7 });
@@ -118,7 +120,7 @@ export function createMech(state, bus) {
     targets.sort((a, b) => a.pos.distanceTo(p) - b.pos.distanceTo(p));
     for (let i = 0; i < MECH.rockets.n; i++) {
       const t = targets[i % targets.length];
-      const mesh = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.6, 8).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xd8dde5, emissive: 0xff5533, emissiveIntensity: 1.5 }));
+      const mesh = new THREE.Mesh(rocketGeo, rocketMat);
       mesh.position.set(p.x + (i % 2 ? 1 : -1) * 1.2, p.y - 0.5, p.z);
       root.add(mesh);
       rockets.push({ mesh, target: t, v: new THREE.Vector3((Math.random() - 0.5) * 8, 16 + i, (Math.random() - 0.5) * 8), phase: 0.35 + i * 0.05, life: 6 });
@@ -129,7 +131,7 @@ export function createMech(state, bus) {
   function castStomp() {
     const p = state.player;
     const feet = { x: p.pos.x, y: p.pos.y - p.eye, z: p.pos.z };
-    bus.emit('fx:ring', { pos: feet, radius: 0.5, color: 0xffaa44, life: 0.001 });
+    bus.emit('fx:ring', { pos: feet, radius: MECH.stomp.radius, color: 0xffaa44, life: 0.55, grow: true });
     bus.emit('explode', { pos: { ...feet, y: feet.y + 0.5 }, radius: MECH.stomp.radius, damage: MECH.stomp.dmg, source: 'mech', hurtsPlayer: false, scale: 2.2, color: 0xffaa44 });
     bus.emit('shake', 1);
     bus.emit('sfx', { id: 'mech_stomp' });

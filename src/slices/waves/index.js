@@ -25,8 +25,11 @@ export function createWaves(state, bus) {
   let pendingAfterOffer = null;
   let transitionT = 0;
   let transitionStep = 0;
+  let clearT = 0;
 
   const diff = () => R.difficulty;
+  // acts past 3 (endless) lap the arenas
+  const actDef = (act) => ACTS[(act - 1) % ACTS.length];
 
   function freshStats() {
     return {
@@ -51,6 +54,7 @@ export function createWaves(state, bus) {
     R.mutator = null;
     R.stats = freshStats();
     R.won = false;
+    R.endless = false;
     killTimes = [];
     bus.emit('run:start', { difficulty: d.id });
     bus.emit('arena:load', { id: ACTS[0].arena });
@@ -59,16 +63,20 @@ export function createWaves(state, bus) {
 
   function startAct(act, first = false) {
     R.act = act;
-    const A = ACTS[act - 1];
+    const A = actDef(act);
     state.mode = 'playing';
     bus.emit('act:start', { act, name: A.name, tagline: A.tagline, first });
-    bus.emit('hud:banner', { title: `ACT ${act} — ${A.name}`, sub: A.tagline, color: '#ffd36b', big: true });
+    bus.emit('hud:banner', { title: act > 3 ? `ENDLESS ${act} — ${A.name}` : `ACT ${act} — ${A.name}`, sub: act > 3 ? 'The machines never stop. Neither do you.' : A.tagline, color: act > 3 ? '#c084fc' : '#ffd36b', big: true });
     startWave(R.wave + 1, 6);
   }
 
   function waveDef(n) {
     const act = Math.ceil(n / WAVES_PER_ACT);
-    return ACTS[act - 1].waves[(n - 1) % WAVES_PER_ACT];
+    const def = actDef(act).waves[(n - 1) % WAVES_PER_ACT];
+    if (n <= FINAL_WAVE || def.boss) return def;
+    // endless: every lap past wave 30 brings ~12% more robots per lap
+    const extra = Math.floor(def.length * 0.12 * Math.ceil((n - FINAL_WAVE) / WAVES_PER_ACT));
+    return [...def, ...def.slice(0, extra)];
   }
 
   function trim(list) {
@@ -152,7 +160,7 @@ export function createWaves(state, bus) {
     if (item.boss) {
       opts.hpMult = d.enemyHp * (s.enemyHpMult || 1);
       opts.dmgMult = 1;
-      opts.minionHp = scale(0.04) * d.enemyHp;
+      opts.minionHp = scale(0.04) * d.enemyHp * (s.enemyHpMult || 1);
       opts.minionDmg = scale(0.03);
     } else {
       const eliteFrom = d.eliteFrom;
@@ -172,16 +180,13 @@ export function createWaves(state, bus) {
     bus.emit('wave:cleared', { wave: R.wave, boss: isBossWave, bonus });
     bus.emit('sfx', { id: 'wave_clear' });
     setMutator(null);
-    if (R.wave >= FINAL_WAVE) {
+    if (R.wave === FINAL_WAVE && !R.endless) {
       endRun(true);
       return;
     }
     bus.emit('hud:popup', { text: `WAVE CLEARED +${bonus}` });
-    // let the clear breathe for a beat before the cards come up
-    setTimeout(() => {
-      if (state.mode !== 'playing' || !state.player.alive) return;
-      openOffer();
-    }, 1400);
+    // let the clear breathe for a beat (game time, so pausing can't lose it)
+    clearT = 1.4;
   }
 
   function openOffer() {
@@ -203,13 +208,23 @@ export function createWaves(state, bus) {
     R.stats.grenadesThrown = state.weapons.thrown || 0;
     R.stats.synergies = state.build?.synergies?.size || 0;
     bus.emit('music', { mood: won ? 'victory' : 'defeat', act: R.act });
-    bus.emit('run:end', { won, score: R.score, wave: R.wave, difficulty: diff().id });
+    bus.emit('run:end', { won, score: R.score, wave: R.wave, difficulty: diff().id, endless: R.endless });
     document.exitPointerLock?.();
   }
 
   // ---------- events ----------
   bus.on('run:begin', ({ difficulty }) => begin(difficulty));
   bus.on('player:died', () => endRun(false));
+  // victory → keep going
+  bus.on('run:endless', () => {
+    R.endless = true;
+    R.won = false;
+    state.mode = 'offer';
+    pendingAfterOffer = 'armory';
+    isBossWave = true;
+    bus.emit('music', { mood: 'shop', act: R.act });
+    bus.emit('offer:open', { wave: R.wave, boss: true, act: R.act });
+  });
   bus.on('offer:picked', () => {
     if (pendingAfterOffer === 'armory') {
       pendingAfterOffer = 'transition';
@@ -224,7 +239,7 @@ export function createWaves(state, bus) {
     transitionT = 0;
     transitionStep = 0;
     const next = R.act + 1;
-    bus.emit('act:transition', { act: next, name: ACTS[next - 1].name, tagline: ACTS[next - 1].tagline });
+    bus.emit('act:transition', { act: next, name: actDef(next).name, tagline: next > 3 ? `ENDLESS · LAP ${Math.ceil(next / 3)}` : actDef(next).tagline });
     bus.emit('music', { mood: 'transition', act: next });
     bus.emit('enemies:clear');
   });
@@ -289,7 +304,7 @@ export function createWaves(state, bus) {
         const act = Math.ceil(n / WAVES_PER_ACT);
         if (act !== R.act) {
           R.act = act;
-          bus.emit('arena:load', { id: ACTS[act - 1].arena });
+          bus.emit('arena:load', { id: actDef(act).arena });
         }
         state.mode = 'playing';
         startWave(n, 1);
@@ -311,7 +326,7 @@ export function createWaves(state, bus) {
         transitionT += dt;
         if (transitionStep === 0 && transitionT > 1.4) {
           transitionStep = 1;
-          bus.emit('arena:load', { id: ACTS[R.act].arena });
+          bus.emit('arena:load', { id: actDef(R.act + 1).arena });
           const s = state.stats || {};
           if (s.secondWindPerAct) bus.emit('secondwind:recharge');
         }
@@ -339,6 +354,9 @@ export function createWaves(state, bus) {
         }
         if (spawnT < 0) spawnT = 0;
         if (spawnedAll && queue.length === 0 && state.enemies.alive === 0) waveCleared();
+      } else if (R.waveState === 'cleared' && clearT > 0) {
+        clearT -= dt;
+        if (clearT <= 0 && state.player.alive) openOffer();
       }
 
       // combat intensity for the music

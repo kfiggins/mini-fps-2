@@ -70,11 +70,15 @@ export function createInput(state, bus) {
   return {
     lock() {
       const c = canvas();
-      if (c && document.pointerLockElement !== c) {
+      if (!c || document.pointerLockElement === c) return;
+      // browsers refuse locks outside a user gesture; the menu notices and
+      // shows the pause screen so one click resumes
+      const quiet = (r) => { if (r && r.catch) r.catch(() => {}); };
+      try {
         const p = c.requestPointerLock({ unadjustedMovement: true });
         // unadjustedMovement isn't supported everywhere — fall back quietly
-        if (p && p.catch) p.catch(() => c.requestPointerLock());
-      }
+        if (p && p.catch) p.catch(() => { try { quiet(c.requestPointerLock()); } catch { /* no gesture */ } });
+      } catch { /* no gesture */ }
     },
     unlock() {
       if (document.pointerLockElement) document.exitPointerLock();

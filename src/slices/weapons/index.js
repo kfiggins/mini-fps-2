@@ -63,6 +63,7 @@ export function createWeapons(state, bus) {
     W.grenades = 1;
     W.grenadeMax = GRENADE.max;
     W.grenadeCharge = -1;
+    W.shots = W.hits = W.thrown = 0;
     W.reloading = false;
     W.ads = 0;
     W.scoped = false;
@@ -92,7 +93,7 @@ export function createWeapons(state, bus) {
   function startReload() {
     if (W.reloading || W.ammo[W.current] >= magSize() || state.player.inMech) return;
     const s = stats();
-    if (s.instantReload || state.abilities?.overclock) {
+    if (state.abilities?.overclock) {
       W.ammo[W.current] = magSize();
       bus.emit('sfx', { id: 'reload_end' });
       return;
@@ -179,7 +180,7 @@ export function createWeapons(state, bus) {
     }
     if (s.explosive) {
       bus.emit('explode', {
-        pos: point, radius: 2.6, damage: Math.round(dmg * 0.4 * s.explosive), source: 'explosive',
+        pos: point, radius: 2.6 * (s.blastRadius || 1), damage: Math.round(dmg * 0.4 * s.explosive), source: 'explosive',
         hurtsPlayer: false, scale: 0.45, color: 0xff8833, exclude: enemy,
       });
     }
@@ -290,7 +291,7 @@ export function createWeapons(state, bus) {
     // explosive rounds also pop on bare walls
     if (s.explosive && !anyHit && firstImpact) {
       const base = shotDamage(w, 'body', 10, { hp: 1, maxHp: 1, pos: { y: 0 } });
-      bus.emit('explode', { pos: firstImpact, radius: 2.6, damage: Math.round(base * 0.4 * s.explosive), source: 'explosive', hurtsPlayer: false, scale: 0.45, color: 0xff8833 });
+      bus.emit('explode', { pos: firstImpact, radius: 2.6 * (s.blastRadius || 1), damage: Math.round(base * 0.4 * s.explosive), source: 'explosive', hurtsPlayer: false, scale: 0.45, color: 0xff8833 });
     }
     if (anyHit) {
       W.hits = (W.hits || 0) + 1;

@@ -44,8 +44,9 @@ const pickups = createPickups(state, bus);
 const drones = createDrones(state, bus);
 const mech = createMech(state, bus);
 const shop = createShop(state, bus);
-const bounties = createBounties(state, bus);
 const waves = createWaves(state, bus);
+// after waves: bounty checks read the combo the director just updated
+const bounties = createBounties(state, bus);
 const hud = createHud(state, bus);
 const menu = createMenu(state, bus, { lock: input.lock, unlock: input.unlock });
 

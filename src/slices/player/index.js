@@ -5,10 +5,10 @@ import { GRAVITY, EYE_HEIGHT, PLAYER_RADIUS, STEP_HEIGHT } from '../../core/cons
 // buffer, double jump, jetpack, jump pads), the camera transform, health,
 // armor, regen, and the whole incoming-damage pipeline.
 //
-// Listens: arena:ready, run:start, key, keyup, recoil, player:velocity,
-//          player:teleport, damage:player, heal, shop:buy, mech:enter,
-//          mech:exit, wave:cleared
-// Emits:   player:hurt, player:died, player:landed, player:jumped,
+// Listens: arena:ready, run:start, key, recoil, player:velocity,
+//          damage:player, explode, heal, shop:buy, mech:enter,
+//          mech:exit, wave:cleared, player:invuln, secondwind:recharge
+// Emits:   player:hurt, player:died, player:landed,
 //          sfx, shake, fx:*, mech:hurt, hud:banner
 
 const WALK = 7;
@@ -52,7 +52,7 @@ export function createPlayer(state, bus) {
 
   function reset() {
     const s = state.world?.playerSpawn || { x: 0, z: 0, yaw: 0 };
-    p.pos.set(s.x, EYE_HEIGHT, s.z);
+    p.pos.set(s.x, p.eye, s.z);
     p.vel.set(0, 0, 0);
     p.yaw = s.yaw;
     p.pitch = 0;
@@ -83,11 +83,6 @@ export function createPlayer(state, bus) {
   bus.on('secondwind:recharge', () => {
     if (secondWindUsed) bus.emit('hud:feed', { text: 'SECOND WIND RECHARGED', color: '#ffd36b' });
     secondWindUsed = false;
-  });
-  bus.on('player:teleport', ({ x, y, z, yaw }) => {
-    p.pos.set(x, (y ?? 0) + p.eye, z);
-    p.vel.set(0, 0, 0);
-    if (yaw !== undefined) { p.yaw = yaw; p.pitch = 0; }
   });
 
   bus.on('key', ({ code, repeat }) => {
@@ -302,7 +297,6 @@ export function createPlayer(state, bus) {
           coyote = 0;
           jumpBuffer = 0;
           bus.emit('sfx', { id: 'jump', vol: 0.5 });
-          bus.emit('player:jumped');
         } else if (st.doubleJump && airJumps < st.doubleJump && !p.inMech) {
           p.vel.y = jumpSpeed * 0.95;
           airJumps++;

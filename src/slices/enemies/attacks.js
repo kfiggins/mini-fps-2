@@ -32,11 +32,21 @@ export function createAttacks(state, bus, scene) {
   laserGeo.rotateX(Math.PI / 2);
   laserGeo.translate(0, 0, 0.5);
 
+  // additive glow materials; shared ones for projectiles, fresh ones only for
+  // things that fade individually (their materials are disposed on removal)
   const glowMat = (color, opacity = 1) => {
     const m = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending });
     m.toneMapped = false;
     return m;
   };
+  const shared = new Map();
+  const sharedGlow = (color, opacity) => {
+    const key = `${color}|${opacity}`;
+    if (!shared.has(key)) shared.set(key, glowMat(color, opacity));
+    return shared.get(key);
+  };
+  const missileMat = new THREE.MeshStandardMaterial({ color: 0x333333, emissive: 0xff5522, emissiveIntensity: 2 });
+  const globMat = new THREE.MeshStandardMaterial({ color: 0x3a1a08, emissive: 0xff6a1a, emissiveIntensity: 2.5 });
 
   function playerChest(out) {
     const p = state.player;
@@ -97,15 +107,15 @@ export function createAttacks(state, bus, scene) {
 
   function orb(e, from, dir, cfg) {
     const g = new THREE.Group();
-    g.add(new THREE.Mesh(orbGeo, glowMat(e.rig.mats.glow.color, 0.45)));
-    g.add(new THREE.Mesh(orbCore, glowMat(0xffffff, 0.9)));
+    g.add(new THREE.Mesh(orbGeo, sharedGlow(e.rig.mats.glow.color.getHex(), 0.45)));
+    g.add(new THREE.Mesh(orbCore, sharedGlow(0xffffff, 0.9)));
     g.position.copy(from);
     scene.add(g);
     orbs.push({ mesh: g, v: dir.clone().multiplyScalar(cfg.speed), life: 6, dmg: cfg.dmg, src: e });
   }
 
   function missile(e, from, cfg) {
-    const m = new THREE.Mesh(missileGeo, new THREE.MeshStandardMaterial({ color: 0x333333, emissive: 0xff5522, emissiveIntensity: 2 }));
+    const m = new THREE.Mesh(missileGeo, missileMat);
     m.position.copy(from);
     scene.add(m);
     const v = new THREE.Vector3((Math.random() - 0.5) * 6, 9 + Math.random() * 3, (Math.random() - 0.5) * 6);
@@ -114,7 +124,7 @@ export function createAttacks(state, bus, scene) {
   }
 
   function glob(e, from, target, cfg) {
-    const m = new THREE.Mesh(globGeo, new THREE.MeshStandardMaterial({ color: 0x3a1a08, emissive: 0xff6a1a, emissiveIntensity: 2.5 }));
+    const m = new THREE.Mesh(globGeo, globMat);
     m.position.copy(from);
     scene.add(m);
     // ballistic arc that lands on the target in ~1.3s
@@ -162,9 +172,9 @@ export function createAttacks(state, bus, scene) {
     const d = Math.hypot(pl.pos.x - p.x, pl.pos.z - p.z);
     if (pl.onGround && d < cfg.radius && Math.abs(feet - p.y) < 2) {
       hurt(cfg.dmg, 'shock', p, e);
-      // knock the player away from the slam
-      const k = 9 / Math.max(1, d);
-      bus.emit('player:velocity', { x: (pl.pos.x - p.x) * k * 0.4, y: 6, z: (pl.pos.z - p.z) * k * 0.4 });
+      // knock the player away from the slam (Blast Shield shrugs it off)
+      const k = state.stats?.shockImmune ? 0 : 9 / Math.max(1, d);
+      if (k) bus.emit('player:velocity', { x: (pl.pos.x - p.x) * k * 0.4, y: 6, z: (pl.pos.z - p.z) * k * 0.4 });
     }
   }
 
@@ -214,20 +224,24 @@ export function createAttacks(state, bus, scene) {
   }
 
   function remove(list, i) {
-    const p = list[i];
-    scene.remove(p.mesh);
-    if (p.mesh.material?.dispose) p.mesh.material.dispose();
+    scene.remove(list[i].mesh);
     list.splice(i, 1);
   }
+  const drop = (...meshes) => {
+    for (const m of meshes) {
+      scene.remove(m);
+      m.material?.dispose?.();
+    }
+  };
 
   return {
     hitscan, orb, missile, glob, patch, strike, shockwave, flame, explodeAt,
 
     clear() {
       for (const l of [orbs, missiles, globs]) while (l.length) remove(l, 0);
-      for (const s of strikes) scene.remove(s.disc, s.ring);
-      for (const w of waves) scene.remove(w.ring);
-      for (const p of patches) scene.remove(p.mesh, p.ring);
+      for (const s of strikes) drop(s.disc, s.ring);
+      for (const w of waves) drop(w.ring);
+      for (const p of patches) drop(p.mesh, p.ring);
       strikes.length = waves.length = patches.length = 0;
     },
 
@@ -294,7 +308,7 @@ export function createAttacks(state, bus, scene) {
         s.disc.material.opacity = 0.12 + k * 0.3;
         if (s.t <= 0) {
           explodeAt({ x: s.x, y: s.y + 0.4, z: s.z }, s.dmg, s.radius, s.src, 0xff5522);
-          scene.remove(s.disc, s.ring);
+          drop(s.disc, s.ring);
           strikes.splice(i, 1);
         }
       }
@@ -305,7 +319,7 @@ export function createAttacks(state, bus, scene) {
         w.ring.scale.setScalar(0.5 + k * w.radius);
         w.ring.material.opacity = 0.9 * (1 - k);
         if (k >= 1) {
-          scene.remove(w.ring);
+          drop(w.ring);
           waves.splice(i, 1);
         }
       }
@@ -323,7 +337,7 @@ export function createAttacks(state, bus, scene) {
           hurt(p.dps * 0.3, 'burn', { x: p.x, y: p.y, z: p.z }, null);
         }
         if (p.t <= 0) {
-          scene.remove(p.mesh, p.ring);
+          drop(p.mesh, p.ring);
           patches.splice(i, 1);
         }
       }
