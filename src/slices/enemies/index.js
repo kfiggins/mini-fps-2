@@ -78,6 +78,15 @@ export function createEnemies(state, bus) {
       if (n >= 0 && !cfg.fly) state.nav.nodePos(n, pos);
     } else {
       pos.copy(pickSpawn(cfg.fly));
+      if (cfg.boss) {
+        // bosses are too big for the gate bays: arrive 14m inside the wall
+        const l = Math.hypot(pos.x, pos.z) || 1;
+        pos.x -= (pos.x / l) * 14;
+        pos.z -= (pos.z / l) * 14;
+        const n = state.nav?.nearest(pos.x, 0.3, pos.z, true);
+        if (n >= 0) state.nav.nodePos(n, pos);
+        pos.y = 0;
+      }
     }
     if (cfg.fly) pos.y = cfg.hover ?? rand(5, 8);
     const hp = Math.max(10, Math.round(cfg.hp * (opts.hpMult ?? 1)));

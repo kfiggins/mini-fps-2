@@ -51,7 +51,7 @@ function makeMaterials() {
     brass: new THREE.MeshStandardMaterial({ color: 0xc9a14a, roughness: 0.3, metalness: 1 }),
     shell: new THREE.MeshStandardMaterial({ color: 0xa3281e, roughness: 0.5, metalness: 0.2 }),
     red: new THREE.MeshBasicMaterial({ color: 0xff2a2a }),
-    cyan: new THREE.MeshStandardMaterial({ color: 0x0a3040, emissive: 0x19e6ff, emissiveIntensity: 2.5 }),
+    cyan: new THREE.MeshStandardMaterial({ color: 0x0a3040, emissive: 0x19e6ff, emissiveIntensity: 1.1 }),
     violet: new THREE.MeshStandardMaterial({ color: 0x1a1030, emissive: 0x7a4dff, emissiveIntensity: 1.1 }),
     amber: new THREE.MeshStandardMaterial({ color: 0x3a2508, emissive: 0xffa62b, emissiveIntensity: 2 }),
   };

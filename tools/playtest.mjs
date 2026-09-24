@@ -206,6 +206,59 @@ try {
     fs.writeFileSync(path.join(OUT, `nav-${arg1 || 'outpost'}.png`), Buffer.from(res.png.split(',')[1], 'base64'));
     delete res.png;
     console.log(JSON.stringify(res, null, 1));
+  } else if (cmd === 'flow') {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const st = () => page.evaluate(() => { const s = window.__game.state; return { mode: s.mode, wave: s.run.wave, act: s.run.act, ws: s.run.waveState, alive: s.enemies.alive }; });
+    await page.evaluate(() => { window.__game.debug.start('normal'); window.__game.debug.god(true); window.__game.state.input.locked = true; });
+    await wait(1500);
+    // clear wave 1 → offer
+    await page.evaluate(() => window.__game.debug.scrap(1500));
+    for (let i = 0; i < 20 && (await st()).mode !== 'offer'; i++) { await page.evaluate(() => window.__game.debug.winWave()); await wait(700); }
+    await wait(900);
+    await shot('flow-01-offer');
+    // buy a drone + jetpack
+    await page.evaluate(() => { for (const id of ['drone', 'jetpack', 'armor', 'armor']) document.querySelector(`.shop-item[data-id="${id}"]`)?.click(); });
+    await wait(300);
+    await shot('flow-02-shop');
+    await page.evaluate(() => document.querySelector('#offer-cards .card')?.click());
+    await wait(1200);
+    console.log('after pick', JSON.stringify(await st()));
+    // boss: wave 5
+    await page.evaluate(() => window.__game.debug.skipTo(5));
+    await wait(3500);
+    await page.evaluate(() => {
+      const s = window.__game.state; const b = s.enemies.boss; if (!b) return;
+      const p = s.player; p.pos.set(b.pos.x, 1.7, b.pos.z + 14); p.yaw = 0; p.pitch = 0.15;
+      window.__game.debug.god(true);
+    });
+    await wait(1500);
+    await shot('flow-03-boss-warden');
+    // force phase 2
+    await page.evaluate(() => { const b = window.__game.state.enemies.boss; if (b) window.__game.bus.emit('damage:enemy', { enemy: b, amount: Math.ceil(b.maxHp * 0.55), part: 'body', source: 'debug', point: b.center }); });
+    await wait(1200);
+    await shot('flow-04-boss-phase2');
+    // act end: wave 10 cleared → offer → armory → transition
+    await page.evaluate(() => window.__game.debug.skipTo(10));
+    await wait(2500);
+    for (let i = 0; i < 20 && (await st()).mode !== 'offer'; i++) { await page.evaluate(() => { const s = window.__game.state; for (const e of s.enemies.list) if (e.alive) window.__game.bus.emit('damage:enemy', { enemy: e, amount: 1e7, part: 'body', source: 'debug', point: e.center }); window.__game.debug.winWave(); }); await wait(800); }
+    await wait(900);
+    await shot('flow-05-boss-reward');
+    await page.evaluate(() => document.querySelector('#offer-cards .card')?.click());
+    await wait(800);
+    await shot('flow-06-armory');
+    await page.evaluate(() => document.querySelector('#offer-cards .card')?.click());
+    await wait(500);
+    await shot('flow-07-armory-slot');
+    await page.evaluate(() => document.querySelector('#offer-cards .card')?.click());
+    await wait(1200);
+    await shot('flow-08-transition');
+    await wait(3500);
+    console.log('act2', JSON.stringify(await st()));
+    await shot('flow-09-act2');
+    // death screen
+    await page.evaluate(() => { window.__game.debug.god(false); window.__game.bus.emit('damage:player', { amount: 9999, kind: 'shot', from: { x: 0, y: 0, z: 0 } }); });
+    await wait(2800);
+    await shot('flow-10-death');
   } else if (cmd === 'eval') {
     const r = await page.evaluate(arg1);
     console.log(JSON.stringify(r, null, 1));

@@ -320,7 +320,7 @@ export function createMenu(state, bus, { lock, unlock }) {
     fade.classList.add('on');
   });
   bus.on('act:start', () => {
-    setTimeout(() => fade.classList.remove('on'), 300);
+    fade.classList.remove('on');
   });
 
   render();

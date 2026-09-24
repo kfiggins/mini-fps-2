@@ -27,8 +27,11 @@ const vert = /* glsl */ `
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
     float size = mix(params.z, params.w, t);
-    gl_PointSize = size * uScale / max(0.1, -mv.z);
+    float depth = max(0.1, -mv.z);
+    gl_PointSize = min(size * uScale / depth, 180.0);
     vColor = color;
+    // fade anything right in front of the lens instead of letting it fill the screen
+    vColor.a *= smoothstep(0.35, 1.6, depth);
     vT = t;
   }`;
 

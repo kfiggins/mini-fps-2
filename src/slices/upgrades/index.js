@@ -292,9 +292,12 @@ export function createUpgrades(state, bus) {
       });
     }
   }
+  // sustained body-shot DPS: a full magazine plus the reload
   function weaponStats(w) {
-    const dps = Math.round(((w.body || w.projectile?.dmg || 0) * w.pellets) / w.interval);
-    return `DMG ${w.body ? `${w.body}${w.pellets > 1 ? `×${w.pellets}` : ''}` : w.projectile.dmg} · RATE ${(1 / w.interval).toFixed(1)}/s · MAG ${w.mag} · ~${dps} DPS`;
+    const per = (w.body || w.projectile?.dmg || 0) * w.pellets;
+    const cycle = w.interval + (w.charge || 0);
+    const dps = Math.round((per * w.mag) / (w.mag * cycle + w.reload));
+    return `DMG ${w.body ? `${w.body}${w.pellets > 1 ? `×${w.pellets}` : ''}` : `${w.projectile.dmg} splash`} · MAG ${w.mag} · ${dps} SUSTAINED DPS`;
   }
   function armoryChoose(i) {
     if (!armoryPick) {
