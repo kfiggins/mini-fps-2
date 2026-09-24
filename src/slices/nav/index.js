@@ -20,7 +20,7 @@ export function createNav(state, bus) {
 
   bus.on('arena:ready', (world) => {
     const t0 = performance.now();
-    graph = buildNavGraph(world.collision, world.bounds, world.jumpPads);
+    graph = buildNavGraph(world.collision, world.bounds, world.jumpPads, world.hazards);
     field = new FlowField(graph);
     lastTarget = -1;
     const ms = (performance.now() - t0).toFixed(0);

@@ -111,7 +111,7 @@ export function createKit(scene, collision) {
 
     // Stairs: smooth ramp collider, stepped visuals. dir: '+x' | '-x' | '+z' | '-z'
     // (the direction you walk to go UP). (x, z) is the bottom-center edge.
-    stairs(x, z, dir, length, width, y0, y1, mat, { stepH = 0.25, sideMat = null } = {}) {
+    stairs(x, z, dir, length, width, y0, y1, mat, { stepH = 0.25, sideMat = null, open = false } = {}) {
       const rise = y1 - y0;
       const n = Math.max(2, Math.round(rise / stepH));
       const axis = dir === '+x' || dir === '-x' ? 0 : 1;
@@ -129,11 +129,24 @@ export function createKit(scene, collision) {
       for (let i = 0; i < n; i++) {
         const top = y0 + (rise * (i + 1)) / n;
         const along = (i + 0.5) * depth * sgn;
-        const h = top - y0;
-        if (axis === 0) kit.box(x + along, y0 + h / 2, z, depth + 0.01, h, width, mat, { collide: false, bevel: 0.02 });
-        else kit.box(x, y0 + h / 2, z + along, width, h, depth + 0.01, mat, { collide: false, bevel: 0.02 });
+        // open stairs: floating treads between side plates; solid: stepped blocks
+        const h = open ? 0.09 : top - y0;
+        const cy = open ? top - 0.045 : y0 + h / 2;
+        if (axis === 0) kit.box(x + along, cy, z, depth + 0.02, h, width, mat, { collide: false, bevel: open ? 0.01 : 0.02 });
+        else kit.box(x, cy, z + along, width, h, depth + 0.02, mat, { collide: false, bevel: open ? 0.01 : 0.02 });
       }
-      if (sideMat) {
+      const ry = axis === 0 ? (sgn > 0 ? 0 : Math.PI) : (sgn > 0 ? -Math.PI / 2 : Math.PI / 2);
+      if (open) {
+        // triangular side plates read as the solid body the collider is
+        const shape = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(length, 0), new THREE.Vector2(length, rise)]);
+        const plate = new THREE.ExtrudeGeometry(shape, { depth: 0.08, bevelEnabled: false });
+        plate.translate(0, 0, -0.04);
+        for (const s of [-1, 1]) {
+          const px = axis === 0 ? x : x + s * (width / 2 + 0.04);
+          const pz = axis === 0 ? z + s * (width / 2 + 0.04) : z;
+          kit.geo(plate, sideMat || mat, { x: px, y: y0, z: pz, ry });
+        }
+      } else if (sideMat) {
         // stringers along both sides
         for (const s of [-1, 1]) {
           const len = Math.hypot(length, rise);
@@ -141,8 +154,7 @@ export function createKit(scene, collision) {
           const g = roundedBox(len, 0.12, 0.1, 0.02);
           const cx = axis === 0 ? x + (sgn * length) / 2 : x + s * (width / 2 + 0.05);
           const cz = axis === 1 ? z + (sgn * length) / 2 : z + s * (width / 2 + 0.05);
-          if (axis === 0) kit.geo(g, sideMat, { x: cx, y: y0 + rise / 2 + 0.08, z: cz, rz: ang * sgn });
-          else kit.geo(g, sideMat, { x: cx, y: y0 + rise / 2 + 0.08, z: cz, ry: Math.PI / 2, rz: ang * sgn });
+          kit.geo(g, sideMat, { x: cx, y: y0 + rise / 2 + 0.08, z: cz, ry, rz: ang });
         }
       }
     },

@@ -296,11 +296,12 @@ export function createFx(state, bus) {
     }
   }
 
-  function ring({ pos, radius, color = 0xffaa44, life = 0.6 }) {
+  function ring({ pos, radius, color = 0xffaa44, life = 0.6, grow = false }) {
     const r = rings.next();
     r.mesh.position.set(pos.x, pos.y + 0.08, pos.z);
     r.mesh.material.color.setHex(color);
-    r.r0 = radius; r.r1 = radius * 0.2; r.life = r.max = life; r.shrink = true;
+    if (grow) { r.r0 = 0.5; r.r1 = radius; r.shrink = false; } else { r.r0 = radius; r.r1 = radius * 0.2; r.shrink = true; }
+    r.life = r.max = life;
     r.mesh.visible = true;
   }
 

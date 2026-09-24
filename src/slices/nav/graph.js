@@ -13,7 +13,7 @@ const HEIGHT = 1.7;
 const CLIMB = 0.72;
 const MAX_DROP = 8;
 
-export function buildNavGraph(col, bounds, jumpPads = []) {
+export function buildNavGraph(col, bounds, jumpPads = [], hazards = []) {
   const minX = bounds.minX, minZ = bounds.minZ;
   const nx = Math.ceil((bounds.maxX - minX) / CELL);
   const nz = Math.ceil((bounds.maxZ - minZ) / CELL);
@@ -34,6 +34,7 @@ export function buildNavGraph(col, bounds, jumpPads = []) {
       cand.push(col.floorY);
       const list = col.query(x - 0.01, z - 0.01, x + 0.01, z + 0.01);
       for (const c of list) {
+        if (c.tag === 'barrier' || c.tag === 'nowalk') continue;
         if (x < c.minX || x > c.maxX || z < c.minZ || z > c.maxZ) continue;
         cand.push(surfaceY(c, x, z));
       }
@@ -43,6 +44,8 @@ export function buildNavGraph(col, bounds, jumpPads = []) {
         const g = col.groundHeight(x, z, 0.05, h, 0.05);
         if (Math.abs(g - h) > 0.08) continue;
         if (!col.fits(x, h, z, RADIUS, HEIGHT)) continue;
+        // never path through molten floors (bridges sit above them)
+        if (h < 0.3 && hazards.some((hz) => x > hz.minX - RADIUS && x < hz.maxX + RADIUS && z > hz.minZ - RADIUS && z < hz.maxZ + RADIUS)) continue;
         // a surface just below another (floor under a ramp's low end) is the
         // same standing spot — keep only the upper one
         if (valid.length && h - valid[valid.length - 1] < 0.6) valid.pop();
@@ -307,11 +310,12 @@ export class FlowField {
     for (let i = 0; i < lookahead; i++) {
       const nx = this.next[cur];
       if (nx < 0) break;
+      // stop the lookahead where the path changes level (stairs, drops,
+      // jump pads) — aim for the step itself, not past it
+      if (cur !== n && Math.abs(g.height[nx] - h0) > 0.4) break;
       cur = nx;
-      // stop the lookahead where the path changes level (stairs, drops)
       if (Math.abs(g.height[cur] - h0) > 0.4) break;
     }
-    if (cur === n && this.next[n] >= 0) cur = this.next[n];
     g.nodePos(cur, out);
     return this.dist[n];
   }

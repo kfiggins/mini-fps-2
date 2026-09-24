@@ -484,8 +484,10 @@ export function createEnemies(state, bus) {
     const l = Math.hypot(mx, mz);
     const tx = l > 0.01 ? (mx / l) * speed : 0, tz = l > 0.01 ? (mz / l) * speed : 0;
     const acc = Math.min(1, dt * 8);
-    e.vel.x += (tx - e.vel.x) * acc;
-    e.vel.z += (tz - e.vel.z) * acc;
+    if (!e.padFly) {
+      e.vel.x += (tx - e.vel.x) * acc;
+      e.vel.z += (tz - e.vel.z) * acc;
+    }
     if (stunned) { e.vel.x *= 0.8; e.vel.z *= 0.8; }
     moveBody(e, dt);
 
@@ -536,6 +538,21 @@ export function createEnemies(state, bus) {
       } else if (e.vy <= 0 && pos.y <= support + 0.05) {
         pos.y = support;
         e.vy = 0;
+        e.padFly = false;
+      }
+      // jump pads launch robots too (they're links in the nav graph)
+      e.padCd = Math.max(0, (e.padCd || 0) - dt);
+      if (e.vy === 0 && e.padCd <= 0) {
+        for (const pad of state.world.jumpPads) {
+          if (Math.hypot(pos.x - pad.x, pos.z - pad.z) < pad.r && Math.abs(pos.y - (pad.y ?? 0)) < 0.4) {
+            e.vel.set(pad.vx, 0, pad.vz);
+            e.vy = pad.vy;
+            e.padFly = true;
+            e.padCd = 1;
+            bus.emit('sfx', { id: 'jump_pad', pos, vol: 0.6 });
+            break;
+          }
+        }
       }
     }
     const b = state.world.bounds;

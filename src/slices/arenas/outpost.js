@@ -120,6 +120,12 @@ export function buildOutpost(ctx) {
     P.hesco(kit, s * H, -H, s * H, -gate, M.hescoFab, M.dark);
     P.hesco(kit, s * H, gate, s * H, H, M.hescoFab, M.dark);
   }
+  // invisible barrier above the perimeter so jetpacks can't leave the base
+  // (spawn bays stay open to the sky; their outer walls get barriers too)
+  for (const s of [-1, 1]) {
+    kit.collision.addBox(-60, 2.6, s * H - 0.7, 60, 60, s * H + 0.7, 'barrier');
+    kit.collision.addBox(s * H - 0.7, 2.6, -60, s * H + 0.7, 60, 60, 'barrier');
+  }
   const spawnPoints = [];
   // gate bays: short enclosed pens outside each gap — enemies beam in here
   for (const [nx, nz] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
@@ -159,8 +165,8 @@ export function buildOutpost(ctx) {
   P.container(kit, 19.5, 0, -32, 'x', M.contTan, M.dark);
   P.container(kit, 26, 0, -32, 'x', M.contRed, M.dark);
   P.container(kit, 26, 2.6, -32, 'x', M.contBlue, M.dark, { doors: false });
-  kit.stairs(18, -26.6, '-z', 4.2, 1.4, 0, 2.6, M.steel, { sideMat: M.dark });
-  kit.stairs(17.9, -32.3, '+x', 5.05, 1.3, 2.6, 5.2, M.steel, { sideMat: M.dark });
+  kit.stairs(18, -26.6, '-z', 4.2, 1.4, 0, 2.6, M.steel, { sideMat: M.dark, open: true });
+  kit.stairs(17.9, -32.3, '+x', 5.05, 1.3, 2.6, 5.2, M.steel, { sideMat: M.dark, open: true });
   P.sandbagWall(kit, 24, -30.9, 28.5, -30.9, M.sandbag, { layers: 3, y: 5.2 });
   P.container(kit, 33.5, 0, -24, 'z', M.contBlue, M.dark);
   kit.ramp(32.6, -20.95, 34.4, -16.4, 1, 0, 2.6, false, M.steel);
@@ -286,7 +292,7 @@ function buildCommandPost(kit, M, updaters) {
   for (const [bx, bz] of [[X + 2.2, 2.2], [X + 2.2, 4.4]]) kit.box(bx, (F2 - 0.3) / 2, bz, 0.25, F2 - 0.3, 0.25, M.dark);
   kit.slab(X + 2.3, F2, 2.0, X + 2.4, F2 + 1.0, 4.6, M.dark, { bevel: 0.01 });
   kit.slab(X, F2, 1.9, X + 2.4, F2 + 1.0, 2.0, M.dark, { bevel: 0.01 });
-  kit.stairs(X + 1.2, 10.6, '-z', 6.0, 1.6, 0, F2, M.steel, { sideMat: M.dark });
+  kit.stairs(X + 1.2, 10.6, '-z', 6.0, 1.6, 0, F2, M.steel, { sideMat: M.dark, open: true });
   // ground-floor furniture (cover)
   kit.box(-3, 0.45, -3.5, 2.2, 0.9, 1, M.steel);
   kit.box(-3, 0.45, 3.2, 2.2, 0.9, 1, M.steel);
@@ -348,10 +354,10 @@ function watchtower(kit, M, cx, cz, stairs) {
   const len = 8.2;
   for (const { dir } of stairs) {
     // stairs arrive at the rail opening, running away from the tower
-    if (dir === '-x') kit.stairs(cx + S + len, cz + 1.1, '-x', len, 1.5, 0, TOP, M.wood, { sideMat: M.dark });
-    if (dir === '+x') kit.stairs(cx - S - len, cz - 1.1, '+x', len, 1.5, 0, TOP, M.wood, { sideMat: M.dark });
-    if (dir === '-z') kit.stairs(cx - 1.1, cz + S + len, '-z', len, 1.5, 0, TOP, M.wood, { sideMat: M.dark });
-    if (dir === '+z') kit.stairs(cx + 1.1, cz - S - len, '+z', len, 1.5, 0, TOP, M.wood, { sideMat: M.dark });
+    if (dir === '-x') kit.stairs(cx + S + len, cz + 1.1, '-x', len, 1.5, 0, TOP, M.wood, { sideMat: M.dark, open: true });
+    if (dir === '+x') kit.stairs(cx - S - len, cz - 1.1, '+x', len, 1.5, 0, TOP, M.wood, { sideMat: M.dark, open: true });
+    if (dir === '-z') kit.stairs(cx - 1.1, cz + S + len, '-z', len, 1.5, 0, TOP, M.wood, { sideMat: M.dark, open: true });
+    if (dir === '+z') kit.stairs(cx + 1.1, cz - S - len, '+z', len, 1.5, 0, TOP, M.wood, { sideMat: M.dark, open: true });
   }
 }
 

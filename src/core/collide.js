@@ -190,6 +190,7 @@ export class CollisionWorld {
           const c = list[i];
           if (c.stamp === s) continue;
           c.stamp = s;
+          if (c.tag === 'barrier') continue; // invisible sky walls stop bodies, not bullets
           const t = c.kind === BOX
             ? rayBox(c, ox, oy, oz, dx, dy, dz, best, hit)
             : rayRamp(c, ox, oy, oz, dx, dy, dz, best, hit);
@@ -230,11 +231,12 @@ export class CollisionWorld {
   }
 
   // Is there room for a body of this radius/height standing at (x, feetY, z)?
-  fits(x, feetY, z, radius, height) {
+  // Anything within step height of the feet doesn't count — you'd step onto it.
+  fits(x, feetY, z, radius, height, step = 0.5) {
     const list = this.query(x - radius, z - radius, x + radius, z + radius);
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
-      if (c.maxY <= feetY + 0.05 || c.minY >= feetY + height) continue;
+      if (c.maxY <= feetY + step || c.minY >= feetY + height) continue;
       if (x <= c.minX - radius || x >= c.maxX + radius || z <= c.minZ - radius || z >= c.maxZ + radius) continue;
       if (c.kind === RAMP) {
         const cx = Math.min(c.maxX, Math.max(c.minX, x));

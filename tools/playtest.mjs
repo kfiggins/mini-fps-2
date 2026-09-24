@@ -157,6 +157,55 @@ try {
     });
     await new Promise((r) => setTimeout(r, 400));
     await shot(`enemies-${arg2 || 'lineup'}`);
+  } else if (cmd === 'nav') {
+    // top-down nav audit: colour = height, red = walkable but unreachable
+    await page.evaluate((a) => { if (a) window.__game.bus.emit('arena:load', { id: a }); }, arg1 || null);
+    await new Promise((r) => setTimeout(r, 1500));
+    const res = await page.evaluate(() => {
+      const g = window.__game.state.nav.graph;
+      const S = 8;
+      const c = document.createElement('canvas');
+      c.width = g.nx * S; c.height = g.nz * S;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#111'; ctx.fillRect(0, 0, c.width, c.height);
+      // true reachability: directed BFS from every enemy spawn (walk, drop, pad links)
+      const reach = new Uint8Array(g.N);
+      const q = [];
+      for (const p of window.__game.state.world.spawnPoints) { const n = g.nearest(p.x, 0.3, p.z); if (n >= 0 && !reach[n]) { reach[n] = 1; q.push(n); } }
+      while (q.length) { const u = q.pop(); for (let k = g.out.start[u]; k < g.out.start[u + 1]; k++) { const v = g.out.to[k]; if (!reach[v]) { reach[v] = 1; q.push(v); } } }
+      const islands = new Map();
+      // draw low nodes first so upper floors paint on top
+      const order = [...Array(g.N).keys()].sort((a, b) => g.height[a] - g.height[b]);
+      for (const n of order) {
+        const ci = g.nodeCol[n];
+        const ix = ci % g.nx, iz = (ci / g.nx) | 0;
+        const h = g.height[n];
+        const main = reach[n] === 1;
+        if (!main) islands.set(g.comp[n], (islands.get(g.comp[n]) || 0) + 1);
+        const l = Math.min(85, 25 + h * 6);
+        ctx.fillStyle = main ? `hsl(${200 - h * 12}, 70%, ${l}%)` : '#ff2a2a';
+        ctx.fillRect(ix * S + 1, iz * S + 1, S - 2, S - 2);
+      }
+      const w = window.__game.state.world;
+      ctx.fillStyle = '#ffd36b';
+      for (const p of w.spawnPoints) ctx.fillRect((p.x - g.minX) * S - 4, (p.z - g.minZ) * S - 4, 8, 8);
+      ctx.fillStyle = '#3dff8a';
+      const ps = w.playerSpawn;
+      ctx.fillRect((ps.x - g.minX) * S - 5, (ps.z - g.minZ) * S - 5, 10, 10);
+      const inside = (id) => { for (let k = 0; k < g.N; k++) if (g.comp[k] === id) { const o = {}; g.nodePos(k, o); return Math.abs(o.x) < 41 && Math.abs(o.z) < 41; } return false; };
+      const big = [...islands.entries()].filter(([id, n]) => n >= 4 && inside(id)).sort((a, b) => b[1] - a[1]);
+      // sample island positions
+      const where = big.slice(0, 12).map(([id, n]) => {
+        let k = 0; for (; k < g.N; k++) if (g.comp[k] === id) break;
+        const o = {}; g.nodePos(k, o);
+        return { nodes: n, x: o.x, y: +o.y.toFixed(2), z: o.z };
+      });
+      const spawnsOk = w.spawnPoints.map((p) => { const n = g.nearest(p.x, 0.2, p.z); return n >= 0 && g.comp[n] === g.main; });
+      return { png: c.toDataURL(), N: g.N, E: g.E, main: g.compSize[g.main], islands: where, spawnsOk, buildMs: window.__game.state.nav.buildMs };
+    });
+    fs.writeFileSync(path.join(OUT, `nav-${arg1 || 'outpost'}.png`), Buffer.from(res.png.split(',')[1], 'base64'));
+    delete res.png;
+    console.log(JSON.stringify(res, null, 1));
   } else if (cmd === 'eval') {
     const r = await page.evaluate(arg1);
     console.log(JSON.stringify(r, null, 1));

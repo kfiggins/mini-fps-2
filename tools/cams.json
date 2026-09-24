@@ -1,13 +1,293 @@
 {
-  "outpost": [
-    { "name": "spawn", "pos": [0, 1.7, 33], "yaw": 0 },
-    { "name": "cp-front", "pos": [0, 1.7, 16], "yaw": 0, "pitch": 0.15 },
-    { "name": "cp-inside", "pos": [-2, 1.7, 2], "yaw": 0.6 },
-    { "name": "cp-roof", "pos": [2, 9.5, 2], "yaw": 2.4, "pitch": -0.15 },
-    { "name": "containers", "pos": [14, 1.7, -14], "yaw": -0.9 },
-    { "name": "tower-nw", "pos": [-16, 1.7, -16], "yaw": 0.8, "pitch": 0.12 },
-    { "name": "heli", "pos": [-5, 1.7, -18], "yaw": 1.2 },
-    { "name": "comms", "pos": [18, 1.7, 8], "yaw": -1.9 },
-    { "name": "overview", "pos": [0, 30, 55], "yaw": 0, "pitch": -0.55 }
-  ]
+ "outpost": [
+  {
+   "name": "spawn",
+   "pos": [
+    0,
+    1.7,
+    33
+   ],
+   "yaw": 0
+  },
+  {
+   "name": "cp-front",
+   "pos": [
+    0,
+    1.7,
+    16
+   ],
+   "yaw": 0,
+   "pitch": 0.15
+  },
+  {
+   "name": "cp-inside",
+   "pos": [
+    -2,
+    1.7,
+    2
+   ],
+   "yaw": 0.6
+  },
+  {
+   "name": "cp-roof",
+   "pos": [
+    2,
+    9.5,
+    2
+   ],
+   "yaw": 2.4,
+   "pitch": -0.15
+  },
+  {
+   "name": "containers",
+   "pos": [
+    14,
+    1.7,
+    -14
+   ],
+   "yaw": -0.9
+  },
+  {
+   "name": "tower-nw",
+   "pos": [
+    -16,
+    1.7,
+    -16
+   ],
+   "yaw": 0.8,
+   "pitch": 0.12
+  },
+  {
+   "name": "heli",
+   "pos": [
+    -5,
+    1.7,
+    -18
+   ],
+   "yaw": 1.2
+  },
+  {
+   "name": "comms",
+   "pos": [
+    18,
+    1.7,
+    8
+   ],
+   "yaw": -1.9
+  },
+  {
+   "name": "overview",
+   "pos": [
+    0,
+    30,
+    55
+   ],
+   "yaw": 0,
+   "pitch": -0.55
+  }
+ ],
+ "refinery": [
+  {
+   "name": "spawn",
+   "pos": [
+    0,
+    1.7,
+    36
+   ],
+   "yaw": 0
+  },
+  {
+   "name": "deck-south",
+   "pos": [
+    0,
+    1.7,
+    17
+   ],
+   "yaw": 0,
+   "pitch": 0.12
+  },
+  {
+   "name": "deck-top",
+   "pos": [
+    3,
+    5.2,
+    4
+   ],
+   "yaw": 0.7,
+   "pitch": -0.05
+  },
+  {
+   "name": "under-deck",
+   "pos": [
+    -3,
+    1.7,
+    5
+   ],
+   "yaw": -2.3
+  },
+  {
+   "name": "channel",
+   "pos": [
+    -8,
+    1.7,
+    -11
+   ],
+   "yaw": -1.0
+  },
+  {
+   "name": "tanks",
+   "pos": [
+    14,
+    1.7,
+    -26
+   ],
+   "yaw": -1.2,
+   "pitch": 0.15
+  },
+  {
+   "name": "tank-top",
+   "pos": [
+    31,
+    8.7,
+    -30
+   ],
+   "yaw": 2.2,
+   "pitch": -0.2
+  },
+  {
+   "name": "pumphouse",
+   "pos": [
+    -18,
+    1.7,
+    -20
+   ],
+   "yaw": 0.75,
+   "pitch": 0.1
+  },
+  {
+   "name": "gantry",
+   "pos": [
+    -14,
+    10.2,
+    10.5
+   ],
+   "yaw": -1.9,
+   "pitch": -0.3
+  },
+  {
+   "name": "dock",
+   "pos": [
+    14,
+    1.7,
+    22
+   ],
+   "yaw": -2.0
+  },
+  {
+   "name": "slag",
+   "pos": [
+    -12,
+    1.7,
+    16
+   ],
+   "yaw": 2.2
+  },
+  {
+   "name": "overview",
+   "pos": [
+    0,
+    34,
+    58
+   ],
+   "yaw": 0,
+   "pitch": -0.6
+  }
+ ],
+ "reactor": [
+  {
+   "name": "spawn",
+   "pos": [
+    0,
+    1.7,
+    35
+   ],
+   "yaw": 0
+  },
+  {
+   "name": "reactor",
+   "pos": [
+    0,
+    1.7,
+    21
+   ],
+   "yaw": 0,
+   "pitch": 0.25
+  },
+  {
+   "name": "dais",
+   "pos": [
+    4,
+    3.2,
+    -7.2
+   ],
+   "yaw": -2.6,
+   "pitch": 0.1
+  },
+  {
+   "name": "ring",
+   "pos": [
+    -15.5,
+    7.7,
+    15.5
+   ],
+   "yaw": -2.4,
+   "pitch": -0.1
+  },
+  {
+   "name": "control",
+   "pos": [
+    -18,
+    1.7,
+    -18
+   ],
+   "yaw": 0.8
+  },
+  {
+   "name": "servers",
+   "pos": [
+    18,
+    1.7,
+    24
+   ],
+   "yaw": -1.57
+  },
+  {
+   "name": "hangar",
+   "pos": [
+    -12,
+    1.7,
+    16
+   ],
+   "yaw": 2.4
+  },
+  {
+   "name": "tanks",
+   "pos": [
+    16,
+    1.7,
+    -18
+   ],
+   "yaw": -2.3
+  },
+  {
+   "name": "overview",
+   "pos": [
+    0,
+    34,
+    56
+   ],
+   "yaw": 0,
+   "pitch": -0.6
+  }
+ ]
 }

@@ -13,7 +13,7 @@ const vert = /* glsl */ `
 
 const frag = /* glsl */ `
   uniform vec3 top, horizon, bottom, sunColor, sunDir, cloudColor;
-  uniform float sunSize, cloudAmount, stars, time, haze;
+  uniform float sunSize, cloudAmount, stars, time, haze, horizonPow;
   varying vec3 vDir;
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -32,7 +32,7 @@ const frag = /* glsl */ `
     vec3 d = normalize(vDir);
     float h = d.y;
     vec3 col = h > 0.0
-      ? mix(horizon, top, pow(clamp(h, 0.0, 1.0), 0.55))
+      ? mix(horizon, top, pow(clamp(h, 0.0, 1.0), horizonPow))
       : mix(horizon, bottom, clamp(-h * 3.0, 0.0, 1.0));
     // sun disc + glow
     float sd = max(dot(d, normalize(sunDir)), 0.0);
@@ -67,6 +67,7 @@ export function createSky(root, scene, renderer, opts) {
     cloudAmount: { value: opts.clouds ?? 0.35 },
     stars: { value: opts.stars ?? 0 },
     haze: { value: opts.haze ?? 0.5 },
+    horizonPow: { value: opts.horizonPow ?? 0.55 },
     time: { value: 0 },
   };
   const mat = new THREE.ShaderMaterial({

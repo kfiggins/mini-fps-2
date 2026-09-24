@@ -498,3 +498,43 @@ export function rust(seed = 12, base = 0x6b3b22) {
   });
   return standard(tex, { tile: 3 });
 }
+
+// Animated molten metal: scrolling fbm in the shader, strongly emissive so
+// bloom makes it glow. Returns a material with an `update(dt)` in userData.
+export function lava(color = 0xff6a1a) {
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 }, uColor: { value: new THREE.Color(color) } },
+    vertexShader: /* glsl */ `
+      varying vec3 vW;
+      void main() {
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        vW = w.xyz;
+        gl_Position = projectionMatrix * viewMatrix * w;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform float uTime;
+      uniform vec3 uColor;
+      varying vec3 vW;
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float noise(vec2 p) {
+        vec2 i = floor(p), f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+      }
+      float fbm(vec2 p) { float s = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { s += noise(p) * a; p *= 2.1; a *= 0.5; } return s; }
+      void main() {
+        vec2 p = vW.xz * 0.35;
+        float n = fbm(p + vec2(uTime * 0.08, uTime * 0.03));
+        float n2 = fbm(p * 2.3 - vec2(uTime * 0.05, -uTime * 0.07) + n);
+        float crust = smoothstep(0.55, 0.75, n2);
+        vec3 hot = uColor * (1.1 + n * 1.6);
+        vec3 col = mix(hot, vec3(0.08, 0.03, 0.02), crust * 0.85);
+        gl_FragColor = vec4(col, 1.0);
+      }`,
+  });
+  mat.toneMapped = true;
+  mat.userData.surface = 'dirt';
+  mat.userData.tileMeters = 4;
+  mat.userData.update = (dt) => { mat.uniforms.uTime.value += dt; };
+  return mat;
+}
