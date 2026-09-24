@@ -53,7 +53,18 @@ let last = performance.now();
 let fpsAcc = 0, fpsN = 0;
 state.fps = 60;
 
+let loopErrors = 0;
 function frame(now) {
+  // never let one bad frame kill the loop: schedule first, report once
+  requestAnimationFrame(frame);
+  try {
+    step(now);
+  } catch (err) {
+    if (loopErrors++ < 3) console.error('frame error', err);
+  }
+}
+
+function step(now) {
   const realDt = Math.min(0.05, Math.max(0, (now - last) / 1000));
   last = now;
   state.time += realDt;
@@ -85,7 +96,6 @@ function frame(now) {
   menu.update(realDt);
   audio.update(realDt);
   render.render(realDt);
-  requestAnimationFrame(frame);
 }
 
 // build the first arena behind the boot screen, then start the loop

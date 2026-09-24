@@ -155,7 +155,7 @@ export function createEnemies(state, bus) {
   function restoreTint(e) {
     for (const m of e.rig.flashMats) {
       if (e.stun > 0.15) m.emissive.setRGB(0.1, 0.35, 0.6);
-      else if (e.enraged) m.emissive.setRGB(0.4, 0.03, 0.03);
+      else if (e.enraged) m.emissive.setRGB(0.14, 0.01, 0.01);
       else if (e.elite) m.emissive.setHex(0x3a2a04);
       else m.emissive.setRGB(0, 0, 0);
     }
@@ -206,7 +206,7 @@ export function createEnemies(state, bus) {
       e.rate = e.cfg.phase2.enrage.rate;
       e.speedMult *= e.cfg.phase2.enrage.speed;
     }
-    if (e.atk.laser && !e.laser) e.laser = attacks.makeLaser(0xff3333);
+    if ((e.atk.laser || e.atk.aimed) && !e.laser) e.laser = attacks.makeLaser(0xff3333);
     if (e.rig.weak) {
       e.hitboxes.push({ x: 0, y: 0, z: 0, r: e.rig.weak.r, part: 'weak', src: e.rig.weak });
       if (e.rig.core) e.rig.core.visible = true;
