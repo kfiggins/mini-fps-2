@@ -72,11 +72,17 @@ export function buildReactor(ctx) {
   M.barrels = [M.cyan, M.panel, M.dark].map(() => new THREE.MeshStandardMaterial({ color: 0x2a3444, roughness: 0.4, metalness: 0.7 }));
   for (const m of [M.cyan, M.magenta, M.core, M.glass, M.black, ...M.barrels]) m.userData.surface = 'metal';
   const mats = { ...M, crate: M.crate, dark: M.black, barrels: M.barrels };
-  const lamp = (x, y, z, color, intensity, dist) => {
-    const l = new THREE.PointLight(color, intensity, dist, 2);
-    l.position.set(x, y, z);
-    scene.add(l);
-    return l;
+  // most "lamps" are fake light pools on the floor; only a couple of hero
+  // lights are real (every real point light costs every pixel on screen)
+  const lamp = (x, y, z, color, intensity, dist, real = false) => {
+    if (real) {
+      const l = new THREE.PointLight(color, intensity, dist, 2);
+      l.position.set(x, y, z);
+      scene.add(l);
+      return l;
+    }
+    kit.lightPool(x, y, z, Math.min(7, dist * 0.45), color, Math.min(1.6, intensity / 7));
+    return { intensity: 0, position: new THREE.Vector3(x, y, z) };
   };
   const strip = (x, y, z, w, h, d, mat = M.cyan) => kit.box(x, y, z, w, h, d, mat, { collide: false, cast: false, bevel: 0 });
 
@@ -159,7 +165,7 @@ export function buildReactor(ctx) {
   kit.geo(new THREE.CylinderGeometry(R + 0.8, R + 1.2, 2.2, 32), M.dark, { y: DY + 1.1 });
   kit.collision.addBox(-R - 1, DY, -(R + 1) * 0.72, R + 1, 60, (R + 1) * 0.72, 'nowalk');
   kit.collision.addBox(-(R + 1) * 0.72, DY, -R - 1, (R + 1) * 0.72, 60, R + 1, 'nowalk');
-  const coreLight = lamp(0, 8, 0, 0x7ff0ff, 28, 55);
+  const coreLight = lamp(0, 8, 0, 0x7ff0ff, 28, 55, true);
   // cover on the dais
   for (const [x, z] of [[-6, -6], [6, 6], [6, -6], [-6, 6]]) kit.box(x, DY + 0.6, z, 1.4, 1.2, 1.4, M.panel);
 

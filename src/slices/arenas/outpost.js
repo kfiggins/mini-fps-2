@@ -297,9 +297,7 @@ function buildCommandPost(kit, M, updaters) {
   const ceil = new THREE.MeshStandardMaterial({ color: 0xfff4e0, emissive: 0xffe8c0, emissiveIntensity: 2.5 });
   for (const [x, y, z] of [[-3.5, F2 - 0.32, -1], [3.5, F2 - 0.32, 1.5], [-2, ROOF - 0.32, 1], [3.5, ROOF - 0.32, -2]]) {
     kit.box(x, y, z, 1.4, 0.04, 0.5, ceil, { collide: false, cast: false, bevel: 0 });
-    const l = new THREE.PointLight(0xffe2b8, 2.6, 8, 2);
-    l.position.set(x, y - 0.4, z);
-    kit.scene.add(l);
+    kit.lightPool(x, y - 0.4, z, 3.2, 0xffe2b8, 0.9);
   }
   // ground-floor furniture (cover)
   kit.box(-3, 0.45, -3.5, 2.2, 0.9, 1, M.steel);

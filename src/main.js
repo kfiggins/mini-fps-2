@@ -65,7 +65,9 @@ function frame(now) {
   }
 }
 
+state.perf = { update: 0, render: 0 };
 function step(now) {
+  const tStart = performance.now();
   const realDt = Math.min(0.05, Math.max(0, (now - last) / 1000));
   last = now;
   state.time += realDt;
@@ -96,7 +98,12 @@ function step(now) {
   hud.update(realDt);
   menu.update(realDt);
   audio.update(realDt);
+  const tMid = performance.now();
   render.render(realDt);
+  const tEnd = performance.now();
+  // exponential averages of CPU time per part (ms) for the perf harness
+  state.perf.update += (tMid - tStart - state.perf.update) * 0.1;
+  state.perf.render += (tEnd - tMid - state.perf.render) * 0.1;
 }
 
 // build the first arena behind the boot screen, then start the loop

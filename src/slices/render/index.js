@@ -4,7 +4,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { GradeShader } from './grade.js';
 
 // Render slice: owns the WebGL renderer, the post chain, camera FOV + shake,
@@ -13,18 +13,22 @@ import { GradeShader } from './grade.js';
 // Listens: arena:ready (env), light, hitstop, player:hurt, shake, quality:changed
 // Reads:   state.settings, state.player, state.fovScale, state.shake
 
+// Performance model: arena shadows are baked once per load (not per frame),
+// point lights are few (every lit pixel pays for every light), and AA is
+// FXAA on medium / MSAA on high.
 const QUALITY = {
-  low: { ratio: 0.8, samples: 0, bloom: false, ao: false, shadows: 1024 },
-  medium: { ratio: 1, samples: 4, bloom: true, ao: false, shadows: 2048 },
-  high: { ratio: 1.5, samples: 4, bloom: true, ao: true, shadows: 2048 },
+  low: { ratio: 0.75, samples: 0, fxaa: false, bloom: false, shadows: 2048, soft: false },
+  medium: { ratio: 1, samples: 0, fxaa: true, bloom: true, shadows: 2048, soft: false },
+  high: { ratio: 1.25, samples: 0, fxaa: true, bloom: true, shadows: 4096, soft: true },
 };
-const LIGHT_POOL = 8;
+const LIGHT_POOL = 4;
 
 export function createRender(state, bus) {
   const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = false; // baked per arena — see bakeShadows()
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -84,8 +88,8 @@ export function createRender(state, bus) {
   // ---- post chain ----
   let composer = null;
   let bloomPass = null;
-  let aoPass = null;
   let gradePass = null;
+  let fxaaPass = null;
   let quality = null;
   const env = { exposure: 1, bloom: 0.55, bloomRadius: 0.5, bloomThreshold: 0.85, grade: {} };
 
@@ -105,15 +109,6 @@ export function createRender(state, bus) {
     composer.setPixelRatio(ratio);
     composer.setSize(window.innerWidth, window.innerHeight);
     composer.addPass(new RenderPass(scene, camera));
-    aoPass = null;
-    if (quality.ao) {
-      aoPass = new GTAOPass(scene, camera, window.innerWidth, window.innerHeight);
-      aoPass.output = GTAOPass.OUTPUT.Default;
-      aoPass.blendIntensity = 0.85;
-      aoPass.updateGtaoMaterial({ radius: 0.6, distanceExponent: 1.5, thickness: 1.2, scale: 1.1 });
-      aoPass.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
-      composer.addPass(aoPass);
-    }
     const vmPass = new RenderPass(viewScene, viewCamera);
     vmPass.clear = false;
     vmPass.clearDepth = true;
@@ -129,13 +124,29 @@ export function createRender(state, bus) {
     composer.addPass(new OutputPass());
     gradePass = new ShaderPass(GradeShader);
     composer.addPass(gradePass);
-    applyGrade();
-    for (const l of state.world?.shadowLights || []) {
-      l.shadow.mapSize.set(quality.shadows, quality.shadows);
-      l.shadow.map?.dispose();
-      l.shadow.map = null;
+    fxaaPass = null;
+    if (quality.fxaa) {
+      fxaaPass = new ShaderPass(FXAAShader);
+      fxaaPass.uniforms.resolution.value.set(1 / w, 1 / h);
+      composer.addPass(fxaaPass);
     }
+    applyGrade();
+    renderer.shadowMap.type = quality.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+    bakeShadows();
   }
+
+  // static arena shadows: size the map for the preset and render it once
+  function bakeShadows() {
+    for (const l of state.world?.shadowLights || []) {
+      if (l.shadow.mapSize.x !== quality.shadows) {
+        l.shadow.mapSize.set(quality.shadows, quality.shadows);
+        l.shadow.map?.dispose();
+        l.shadow.map = null;
+      }
+    }
+    renderer.shadowMap.needsUpdate = true;
+  }
+  bus.on('shadows:bake', () => { renderer.shadowMap.needsUpdate = true; });
 
   function applyGrade() {
     if (!gradePass) return;
@@ -164,7 +175,7 @@ export function createRender(state, bus) {
     if (e.vmSun) vmSun.color.setHex(e.vmSun);
     viewScene.environment = scene.environment;
     viewScene.environmentIntensity = e.vmEnvIntensity ?? 0.8;
-    for (const l of world.shadowLights || []) l.shadow.mapSize.set(quality.shadows, quality.shadows);
+    bakeShadows();
     applyGrade();
   });
   bus.on('quality:changed', buildComposer);

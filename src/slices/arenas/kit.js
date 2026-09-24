@@ -48,6 +48,7 @@ function applyWorldUV(geo, tile) {
 export function createKit(scene, collision) {
   const batches = new Map(); // material -> { geos: [], cast, receive }
   const dynamic = []; // separately-added meshes (animated / special)
+  let poolTex = null;
 
   function push(mat, geo, cast = true) {
     const key = `${mat.uuid}|${cast ? 1 : 0}`;
@@ -192,6 +193,35 @@ export function createKit(scene, collision) {
         cursor = o1;
       }
       seg(cursor, b, y0, y1);
+    },
+
+    // Fake light spill: an additive glow disc on the surface below a lamp.
+    // Looks like a point light's pool for the cost of one transparent quad.
+    lightPool(x, y, z, radius, color, strength = 1) {
+      if (!poolTex) {
+        const c = document.createElement('canvas');
+        c.width = c.height = 128;
+        const g = c.getContext('2d');
+        const grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+        grd.addColorStop(0, 'rgba(255,255,255,1)');
+        grd.addColorStop(0.35, 'rgba(255,255,255,0.45)');
+        grd.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = grd;
+        g.fillRect(0, 0, 128, 128);
+        poolTex = new THREE.CanvasTexture(c);
+      }
+      const floor = collision.groundHeight(x, z, 0.1, y - 0.3, 0);
+      const m = new THREE.MeshBasicMaterial({
+        map: poolTex, color, transparent: true, opacity: Math.min(1, 0.45 * strength),
+        blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2,
+      });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), m);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set(x, floor + 0.04, z);
+      mesh.renderOrder = 1;
+      scene.add(mesh);
+      dynamic.push(mesh);
+      return mesh;
     },
 
     // Separate mesh (animated props, emissive signs, etc.)

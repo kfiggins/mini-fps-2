@@ -32,8 +32,9 @@ export function createInput(state, bus) {
 
   document.addEventListener('mousemove', (e) => {
     if (!input.locked) return;
-    // guard against the occasional huge spike some browsers emit on lock
-    if (Math.abs(e.movementX) > 400 || Math.abs(e.movementY) > 400) return;
+    // only drop the absurd spikes some browsers emit right as the lock engages
+    // (real fast flicks on high-DPI mice easily exceed a few hundred counts)
+    if (Math.abs(e.movementX) > 3000 || Math.abs(e.movementY) > 3000) return;
     input.lookX += e.movementX;
     input.lookY += e.movementY;
   });

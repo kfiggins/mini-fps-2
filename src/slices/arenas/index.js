@@ -53,6 +53,19 @@ export function createArenas(state, bus) {
     const ctx = { scene: root, realScene: state.scene, renderer: state.renderer, kit, rng, emitters: [] };
     info = entry.build(ctx);
     pulseT = 0;
+    // one fixed shadow frustum over the whole arena, baked once (render slice)
+    if (info.sun) {
+      const b = info.bounds;
+      const half = Math.max(b.maxX - b.minX, b.maxZ - b.minZ) / 2 + 2;
+      const sc = info.sun.shadow.camera;
+      sc.left = -half; sc.right = half; sc.top = half; sc.bottom = -half;
+      sc.near = 1; sc.far = 320;
+      sc.updateProjectionMatrix();
+      info.sun.target.position.set(0, 0, 0);
+      info.sun.position.copy(info.sunDir).multiplyScalar(150);
+      info.sun.target.updateMatrixWorld();
+      info.sun.updateMatrixWorld();
+    }
     base = null;
     kit.finish();
 
@@ -173,13 +186,7 @@ export function createArenas(state, bus) {
     update(dt) {
       if (!info) return;
       const p = state.player.pos;
-      if (p && info.sun) {
-        // keep the shadow frustum on the player, snapped to texels (no shimmer)
-        const texel = (info.sun.shadow.camera.right - info.sun.shadow.camera.left) / info.sun.shadow.mapSize.x;
-        snap.set(Math.round(p.x / texel) * texel, 0, Math.round(p.z / texel) * texel);
-        info.sun.target.position.copy(snap);
-        info.sun.position.copy(snap).addScaledVector(info.sunDir, 110);
-      }
+      void p; void snap;
       if (info.sky && state.camera) info.sky.update(dt, state.camera.position);
       for (const u of info.updaters) u(dt);
       updatePulse(dt);

@@ -121,18 +121,18 @@ function buildRifle(M) {
   add(g, RB(0.02, 0.02, 0.2, 0.005), M.metal, 0, 0.028, 0.16); // buffer tube
   add(g, RB(0.012, 0.024, 0.07, 0.004), M.metal, 0.036, 0.03, -0.08); // port cover
   add(g, RB(0.02, 0.012, 0.03, 0.004), M.metal, 0, 0.07, 0.07); // charging handle
-  // red-dot optic: an open tube you look through (no solid plates in the
-  // sight line), a faint tinted lens and a bright glowing dot
+  // red-dot optic: a square window framed by thin bars (nothing solid in
+  // the sight line), a faint tinted lens and a bright glowing dot
   add(g, RB(0.042, 0.012, 0.07, 0.004), M.metal, 0, 0.083, -0.04);
-  add(g, RB(0.03, 0.018, 0.04, 0.003), M.metal, 0, 0.093, -0.045);
-  const tube = new THREE.CylinderGeometry(0.026, 0.026, 0.07, 24, 1, true);
-  tube.rotateX(Math.PI / 2);
-  const tubeMat = M.metal.clone();
-  tubeMat.side = THREE.DoubleSide;
-  add(g, tube, tubeMat, 0, 0.115, -0.045);
-  for (const z of [-0.08, -0.01]) add(g, new THREE.TorusGeometry(0.027, 0.004, 6, 24), M.metal, 0, 0.115, z);
-  add(g, RB(0.012, 0.012, 0.018, 0.003), M.metal, 0.03, 0.115, -0.045); // brightness knob
-  const lens = new THREE.Mesh(new THREE.CircleGeometry(0.025, 24), new THREE.MeshBasicMaterial({
+  add(g, RB(0.03, 0.014, 0.04, 0.003), M.metal, 0, 0.093, -0.045);
+  const W = 0.052, Hh = 0.046, T = 0.005, L = 0.07, cy = 0.115, cz = -0.045;
+  add(g, RB(T, Hh, L, 0.002), M.metal, W / 2, cy, cz);
+  add(g, RB(T, Hh, L, 0.002), M.metal, -W / 2, cy, cz);
+  add(g, RB(W + T, T, L, 0.002), M.metal, 0, cy + Hh / 2, cz);
+  add(g, RB(W + T, T, L, 0.002), M.metal, 0, cy - Hh / 2, cz);
+  add(g, RB(W + 0.012, 0.008, 0.012, 0.002), M.metal, 0, cy + Hh / 2 + 0.004, cz - L / 2 + 0.006); // hood lip
+  add(g, RB(0.01, 0.012, 0.018, 0.003), M.metal, W / 2 + 0.008, cy, cz); // brightness knob
+  const lens = new THREE.Mesh(new THREE.PlaneGeometry(W - T, Hh - T), new THREE.MeshBasicMaterial({
     color: 0x9fe8ff, transparent: true, opacity: 0.07, depthWrite: false,
   }));
   lens.position.set(0, 0.115, -0.079);
@@ -333,9 +333,9 @@ export class Viewmodel {
     this.kickZ = new Spring(260, 22);
     this.kickRot = new Spring(220, 18);
     this.kickYaw = new Spring(200, 18);
-    this.swayX = new Spring(90, 14);
-    this.swayY = new Spring(90, 14);
-    this.swayRoll = new Spring(80, 12);
+    this.swayX = new Spring(260, 30);
+    this.swayY = new Spring(260, 30);
+    this.swayRoll = new Spring(220, 26);
     this.dip = new Spring(120, 12);
 
     this.equipT = 1;
@@ -476,9 +476,9 @@ export class Viewmodel {
     this.sprintT += ((p.sprint ? 1 : 0) - this.sprintT) * Math.min(1, dt * 9);
 
     // sway: gun lags behind where you look
-    const sx = this.swayX.update(dt, Math.max(-0.04, Math.min(0.04, -p.lookX * 0.00055)));
-    const sy = this.swayY.update(dt, Math.max(-0.04, Math.min(0.04, p.lookY * 0.00055)));
-    const sr = this.swayRoll.update(dt, Math.max(-0.12, Math.min(0.12, -p.lookX * 0.0018)));
+    const sx = this.swayX.update(dt, Math.max(-0.02, Math.min(0.02, -p.lookX * 0.00025)));
+    const sy = this.swayY.update(dt, Math.max(-0.02, Math.min(0.02, p.lookY * 0.00025)));
+    const sr = this.swayRoll.update(dt, Math.max(-0.06, Math.min(0.06, -p.lookX * 0.0008)));
     const kz = this.kickZ.update(dt);
     const kr = this.kickRot.update(dt);
     const ky = this.kickYaw.update(dt);

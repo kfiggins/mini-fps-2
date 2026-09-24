@@ -90,11 +90,17 @@ export function buildRefinery(ctx) {
   for (const m of [M.dark, M.pipe, M.pipeRed, ...M.barrels]) m.userData.surface = 'metal';
   const mats = { ...M, crate: M.crate, dark: M.dark, barrels: M.barrels };
 
-  const lamp = (x, y, z, color, intensity, dist) => {
-    const l = new THREE.PointLight(color, intensity, dist, 2);
-    l.position.set(x, y, z);
-    scene.add(l);
-    return l;
+  // most "lamps" are fake light pools on the floor; only a couple of hero
+  // lights are real (every real point light costs every pixel on screen)
+  const lamp = (x, y, z, color, intensity, dist, real = false) => {
+    if (real) {
+      const l = new THREE.PointLight(color, intensity, dist, 2);
+      l.position.set(x, y, z);
+      scene.add(l);
+      return l;
+    }
+    kit.lightPool(x, y, z, Math.min(7, dist * 0.45), color, Math.min(1.6, intensity / 7));
+    return { intensity: 0, position: new THREE.Vector3(x, y, z) };
   };
 
   // ---------- ground ----------
@@ -188,7 +194,7 @@ export function buildRefinery(ctx) {
   kit.collision.addBox(-CR * 0.7, DY, -CR, CR * 0.7, DY + CH, CR, 'metal');
   emitters.push({ type: 'smoke', x: 0, y: DY + CH + 0.3, z: 0, rate: 4 });
   emitters.push({ type: 'sparks', x: 0.8, y: DY + CH, z: 0.4, rate: 5 });
-  lamp(0, DY + CH + 1, 0, 0xff7a2a, 12, 16);
+  lamp(0, DY + CH + 1, 0, 0xff7a2a, 12, 16, true);
   lamp(0, 2.2, 0, 0xffa060, 6, 13); // under-deck
   for (const [x, z] of [[-4, -4], [4, 4]]) P.crateStack(kit, x, z, mats, rng);
   kit.box(-3.5, 0.55, 3.6, 2.2, 1.1, 1.1, M.steelDark);
@@ -202,7 +208,7 @@ export function buildRefinery(ctx) {
   channel.position.set(0, 0.03, (CZ0 + CZ1) / 2);
   kit.add(channel);
   hazards.push({ minX: -H, maxX: H, minZ: CZ0, maxZ: CZ1, dps: 24 });
-  for (const x of [-30, 0, 30]) lamp(x, 1.3, (CZ0 + CZ1) / 2, 0xff6a1a, 10, 18);
+  for (const x of [-30, 0, 30]) lamp(x, 1.3, (CZ0 + CZ1) / 2, 0xff6a1a, 10, 18, x === 0);
   for (let i = 0; i < 12; i++) emitters.push({ type: 'steam', x: -40 + i * 7.3 + rng() * 2, y: 0.2, z: (CZ0 + CZ1) / 2, rate: 0.6 });
   const bridges = [-26, 0, 26];
   // kerbs along the channel (steppable), broken by bridges

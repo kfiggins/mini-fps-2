@@ -32,6 +32,21 @@ export function createEnemies(state, bus) {
   root.name = 'enemies';
   state.scene.add(root);
   const attacks = createAttacks(state, bus, root);
+  // soft blob shadows (arena shadows are baked, so robots get these instead)
+  const blobTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d');
+    const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grd.addColorStop(0, 'rgba(0,0,0,0.75)');
+    grd.addColorStop(0.6, 'rgba(0,0,0,0.35)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(c);
+  })();
+  const blobMat = new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 });
+  const blobGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
   const debris = [];
   let nextId = 1;
   let losCursor = 0;
@@ -138,6 +153,15 @@ export function createEnemies(state, bus) {
     if (cfg.shield) e.timers.shield = cfg.shield.up;
     e.shieldUp = !!cfg.shield;
     if (cfg.aimed || e.atk.laser) e.laser = attacks.makeLaser(0xffdd44);
+    if (!cfg.fly) {
+      const blob = new THREE.Mesh(blobGeo, blobMat);
+      const bs = (cfg.radius * 2.6) / (cfg.model.size || 1);
+      blob.scale.set(bs * (cfg.model.bulk || 1), 1, bs);
+      blob.position.y = 0.03;
+      blob.renderOrder = 1;
+      rig.body.add(blob);
+    }
+    rig.root.traverse((o) => { o.castShadow = false; });
     rig.root.scale.multiplyScalar(0.01);
     e.baseScale = opts.elite ? 1.12 : 1;
     E.list.push(e);
