@@ -260,7 +260,8 @@ try {
     await wait(2800);
     await shot('flow-10-death');
   } else if (cmd === 'eval') {
-    const r = await page.evaluate(arg1);
+    const code = arg1.startsWith("@") ? fs.readFileSync(arg1.slice(1), "utf8") : arg1;
+    const r = await page.evaluate(code);
     console.log(JSON.stringify(r, null, 1));
     if (arg2) { await new Promise((r) => setTimeout(r, Number(arg3 || 900))); await shot(arg2); }
   }

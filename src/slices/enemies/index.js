@@ -89,7 +89,9 @@ export function createEnemies(state, bus) {
       }
     }
     if (cfg.fly) pos.y = cfg.hover ?? rand(5, 8);
-    const hp = Math.max(10, Math.round(cfg.hp * (opts.hpMult ?? 1)));
+    // fragile types keep their base HP (the difficulty table still applies)
+    const hpMult = cfg.scales || cfg.boss ? (opts.hpMult ?? 1) : (opts.baseHpMult ?? 1);
+    const hp = Math.max(10, Math.round(cfg.hp * hpMult));
     const e = {
       id: nextId++, type: opts.type, cfg, rig, alive: true, pos,
       vel: new THREE.Vector3(), vy: 0, yaw: Math.atan2(state.player.pos.x - pos.x, state.player.pos.z - pos.z) + Math.PI,
@@ -430,7 +432,9 @@ export function createEnemies(state, bus) {
       } else if (cfg.ai === 'rush' || (e.boss && cfg.ai === 'rush')) {
         const close = e.hasLOS && dist < 7 && Math.abs(dy) < 1.2;
         if (close) {
-          mx = ux + -uz * e.strafeDir * 0.5; mz = uz + ux * e.strafeDir * 0.5; sp = 1.3;
+          // zig-zag on open ground only — up on walkways, charge straight
+          const zig = pos.y > 0.6 ? 0 : 0.5;
+          mx = ux + -uz * e.strafeDir * zig; mz = uz + ux * e.strafeDir * zig; sp = 1.3;
         } else path(1.15);
       } else if (cfg.ai === 'sniper') {
         if (dist < 15) {
@@ -544,6 +548,7 @@ export function createEnemies(state, bus) {
       if (pos.y < support - 0.001 && e.vy <= 0.01) {
         pos.y = Math.min(support, pos.y + 12 * dt);
         e.vy = 0;
+        e.padFly = false;
       } else if (e.vy <= 0 && pos.y <= support + 0.05) {
         pos.y = support;
         e.vy = 0;

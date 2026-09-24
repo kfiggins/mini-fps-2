@@ -144,6 +144,7 @@ export function createWaves(state, bus) {
     const opts = {
       type: item.type,
       hpMult: scale(0.04) * d.enemyHp * (s.enemyHpMult || 1),
+      baseHpMult: d.enemyHp * (s.enemyHpMult || 1),
       dmgMult: scale(0.03),
       accuracy: (1 + w * 0.04 * d.waveScale) * d.accuracy,
       speedMult: d.enemySpeed,

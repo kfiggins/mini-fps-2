@@ -6,11 +6,12 @@
 //      wasp (fly, orbit, dive-bomb), support (hover behind allies, heal),
 //      bulwark (advance behind a frontal shield, drop it to fire)
 //  model: rig spec consumed by models.js
+//  scales: HP grows with the wave (fragile types stay one-shot-able)
 //  weak: bosses expose a glowing core (2x damage, like a headshot) in phase 2
 
 export const TYPES = {
   grunt: {
-    name: 'TROOPER', hp: 100, speed: 4.4, radius: 0.45, points: 100, scrap: 10,
+    scales: true, name: 'TROOPER', hp: 100, speed: 4.4, radius: 0.45, points: 100, scrap: 10,
     ai: 'skirmish', range: [8, 20], usesCover: true,
     burst: { n: 3, gap: 0.13, dmg: [6, 10], spread: 0.035, interval: [1.6, 2.8] },
     model: { kind: 'biped', size: 1, armor: 0x3d4a66, trim: 0x22262e, glow: 0xff2b2b, head: 'visor', arm: 'rifle', pack: 'box' },
@@ -21,7 +22,7 @@ export const TYPES = {
     model: { kind: 'quad', size: 0.8, armor: 0xc25a12, trim: 0x2a2320, glow: 0xffe14d },
   },
   tank: {
-    name: 'BRUTE', hp: 240, speed: 2.1, radius: 0.8, points: 300, scrap: 25,
+    scales: true, name: 'BRUTE', hp: 240, speed: 2.1, radius: 0.8, points: 300, scrap: 25,
     ai: 'skirmish', range: [10, 24],
     burst: { n: 1, gap: 0, dmg: [16, 22], spread: 0.05, interval: [2.6, 3.4], heavy: true },
     model: { kind: 'biped', size: 1.45, bulk: 1.5, armor: 0x44583c, trim: 0x23281f, glow: 0xff9030, head: 'dome', arm: 'cannon', shoulder: 'plates' },
@@ -37,25 +38,25 @@ export const TYPES = {
     model: { kind: 'drone', size: 0.9, armor: 0xd8b400, trim: 0x1c1c1c, glow: 0xff3a1a },
   },
   bulwark: {
-    name: 'BULWARK', hp: 170, speed: 3.0, radius: 0.6, points: 250, scrap: 20,
+    scales: true, name: 'BULWARK', hp: 170, speed: 3.0, radius: 0.6, points: 250, scrap: 20,
     ai: 'bulwark', range: [6, 16],
     shield: { up: 3.2, down: 1.8, hp: 99999 },
     burst: { n: 5, gap: 0.1, dmg: [6, 9], spread: 0.04, interval: [0.1, 0.1] },
     model: { kind: 'biped', size: 1.2, bulk: 1.3, armor: 0x6a6f78, trim: 0x2a2d33, glow: 0x4fa8ff, head: 'visor', arm: 'rifle', shieldArm: true },
   },
   mender: {
-    name: 'MENDER', hp: 60, speed: 5, radius: 0.5, points: 200, scrap: 18,
+    scales: true, name: 'MENDER', hp: 60, speed: 5, radius: 0.5, points: 200, scrap: 18,
     ai: 'support', fly: true, heal: { rate: 0.12, range: 14 },
     model: { kind: 'orb', size: 0.9, armor: 0xe6e6e0, trim: 0x2a2d33, glow: 0x3dff8a },
   },
   scorcher: {
-    name: 'SCORCHER', hp: 140, speed: 3.6, radius: 0.55, points: 200, scrap: 18,
+    scales: true, name: 'SCORCHER', hp: 140, speed: 3.6, radius: 0.55, points: 200, scrap: 18,
     ai: 'skirmish', range: [2.5, 6],
     flame: { dps: 22, range: 8 },
     model: { kind: 'biped', size: 1.1, bulk: 1.2, armor: 0x7a4a1e, trim: 0x2a1c12, glow: 0xff7a1a, head: 'dome', arm: 'flamer', pack: 'tanks' },
   },
   slag: {
-    name: 'MORTAR', hp: 180, speed: 2.6, radius: 0.6, points: 250, scrap: 20,
+    scales: true, name: 'MORTAR', hp: 180, speed: 2.6, radius: 0.6, points: 250, scrap: 20,
     ai: 'skirmish', range: [14, 28],
     lob: { n: 1, dmg: 22, patchDps: 15, patchR: 2.4, patchT: 4, interval: [3.5, 5] },
     model: { kind: 'quad', size: 1.25, heavy: true, armor: 0x5a3a3a, trim: 0x221818, glow: 0xffb347, mortar: true },

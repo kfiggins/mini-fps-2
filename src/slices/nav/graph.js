@@ -156,6 +156,20 @@ export function buildNavGraph(col, bounds, jumpPads = [], hazards = []) {
   }
   let main = 0;
   for (let i = 1; i < compSize.length; i++) if (compSize[i] > compSize[main]) main = i;
+  // reachable: everything you can get to from the main walk region by any
+  // link (walk, drop, jump pad) — jump-pad perches count, crate tops don't
+  const reach = new Uint8Array(N);
+  {
+    const q = [];
+    for (let i = 0; i < N; i++) if (comp[i] === main) { reach[i] = 1; q.push(i); }
+    while (q.length) {
+      const u = q.pop();
+      for (let k = out.start[u]; k < out.start[u + 1]; k++) {
+        const v = out.to[k];
+        if (!reach[v]) { reach[v] = 1; q.push(v); }
+      }
+    }
+  }
 
   function colOf(x, z) {
     const ix = Math.floor((x - minX) / CELL), iz = Math.floor((z - minZ) / CELL);
@@ -177,10 +191,10 @@ export function buildNavGraph(col, bounds, jumpPads = [], hazards = []) {
     const ci = colOf(x, z);
     if (ci < 0) return -1;
     const n = inColumn(ci, feetY);
-    if (n >= 0 && Math.abs(height[n] - feetY) < 1.2 && (!preferMain || comp[n] === main)) return n;
+    if (n >= 0 && Math.abs(height[n] - feetY) < 1.2 && (!preferMain || reach[n])) return n;
     // search outward rings for the closest node near this height
     const ix = ci % nx, iz = (ci / nx) | 0;
-    let best = n, bd = n >= 0 && (!preferMain || comp[n] === main) ? Math.abs(height[n] - feetY) * 2 : Infinity;
+    let best = n, bd = n >= 0 && (!preferMain || reach[n]) ? Math.abs(height[n] - feetY) * 2 : Infinity;
     for (let r = 1; r <= 3; r++) {
       for (let dz = -r; dz <= r; dz++) {
         for (let dx = -r; dx <= r; dx++) {
@@ -189,7 +203,7 @@ export function buildNavGraph(col, bounds, jumpPads = [], hazards = []) {
           if (jx < 0 || jz < 0 || jx >= nx || jz >= nz) continue;
           const m = inColumn(jz * nx + jx, feetY);
           if (m < 0) continue;
-          if (preferMain && comp[m] !== main) continue;
+          if (preferMain && !reach[m]) continue;
           const d = Math.hypot(dx, dz) + Math.abs(height[m] - feetY) * 2;
           if (d < bd) { bd = d; best = m; }
         }
@@ -200,7 +214,7 @@ export function buildNavGraph(col, bounds, jumpPads = [], hazards = []) {
   }
 
   return {
-    N, E, nx, nz, minX, minZ, height, nodeCol, out, inc, comp, main, compSize,
+    N, E, nx, nz, minX, minZ, height, nodeCol, out, inc, comp, main, compSize, reach,
     nearest: nearestNode,
     nodePos(i, o) {
       const ci = nodeCol[i];
